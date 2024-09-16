@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "defs/defs.h"
+#include "slcan_cmd_buf.h"
 
 
 typedef enum _Slcan_Msg_Frame_Type {
@@ -26,8 +27,17 @@ typedef struct _Slcan_Can_Msg {
     uint8_t data[SLCAN_CAN_MSG_DATA_SIZE];
 } slcan_can_msg_t;
 
+typedef struct _Slcan_Can_Msg_Extdata {
+    bool has_timestamp;
+    uint16_t timestamp;
+    bool autopoll_flag;
+} slcan_can_msg_extdata_t;
 
 EXTERN bool slcan_can_msg_is_valid(slcan_can_msg_t* msg);
+
+EXTERN bool slcan_can_msg_from_buf(slcan_can_msg_t* can_msg, slcan_can_msg_extdata_t* ed, slcan_cmd_buf_t* cmd_buf);
+
+EXTERN bool slcan_can_msg_to_buf(slcan_can_msg_t* can_msg, slcan_can_msg_extdata_t* ed, slcan_cmd_buf_t* cmd_buf);
 
 
 #endif /* SLCAN_CAN_MSG_H_ */

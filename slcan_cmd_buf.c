@@ -2,17 +2,17 @@
 #include <string.h>
 
 
-void slcan_cmd_buf_init(slcan_cmd_buf_t* msg)
+void slcan_cmd_buf_init(slcan_cmd_buf_t* buf)
 {
-    memset(msg->buf, 0x0, SLCAN_CMD_BUF_SIZE);
-    msg->size = 0;
+    memset(buf->buf, 0x0, SLCAN_CMD_BUF_SIZE);
+    buf->size = 0;
 }
 
-size_t slcan_cmd_buf_put(slcan_cmd_buf_t* msg, uint8_t data)
+size_t slcan_cmd_buf_put(slcan_cmd_buf_t* buf, uint8_t data)
 {
-    if(msg->size < SLCAN_CMD_BUF_SIZE){
-        msg->buf[msg->size] = data;
-        msg->size ++;
+    if(buf->size < SLCAN_CMD_BUF_SIZE){
+        buf->buf[buf->size] = data;
+        buf->size ++;
         return 1;
     }
     return 0;
