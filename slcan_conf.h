@@ -1,0 +1,20 @@
+#ifndef SLCAN_CONF_H_
+#define SLCAN_CONF_H_
+
+
+#define SLCAN_HW_VERSION 0x01
+
+#define SLCAN_SW_VERSION 0x03
+
+#define SLCAN_SERIAL_NUMBER 0x1234
+
+
+#define SLCAN_CAN_FIFO_DEFAULT_SIZE 32
+
+
+#define SLCAN_MASTER_POLL_SLCAN 1
+
+#define SLCAN_SLAVE_POLL_SLCAN 1
+
+
+#endif /* SLCAN_CONF_H_ */

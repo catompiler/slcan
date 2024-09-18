@@ -12,7 +12,7 @@ void slcan_io_fifo_init(slcan_io_fifo_t* fifo)
     fifo->count = 0;
 }
 
-size_t slcan_io_fifo_read_line_size(slcan_io_fifo_t* fifo)
+size_t slcan_io_fifo_read_line_size(const slcan_io_fifo_t* fifo)
 {
     size_t size = slcan_io_fifo_avail(fifo);
     size_t max_size = SLCAN_IO_FIFO_SIZE - fifo->rptr;
@@ -22,7 +22,7 @@ size_t slcan_io_fifo_read_line_size(slcan_io_fifo_t* fifo)
     return line_size;
 }
 
-size_t slcan_io_fifo_write_line_size(slcan_io_fifo_t* fifo)
+size_t slcan_io_fifo_write_line_size(const slcan_io_fifo_t* fifo)
 {
     size_t size = slcan_io_fifo_remain(fifo);
     size_t max_size = SLCAN_IO_FIFO_SIZE - fifo->wptr;
@@ -60,7 +60,7 @@ size_t slcan_io_fifo_get(slcan_io_fifo_t* fifo, uint8_t* data)
     return 0;
 }
 
-size_t slcan_io_fifo_peek(slcan_io_fifo_t* fifo, uint8_t* data)
+size_t slcan_io_fifo_peek(const slcan_io_fifo_t* fifo, uint8_t* data)
 {
     if(data && fifo->count > 0){
         *data = fifo->buf[fifo->rptr];

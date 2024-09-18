@@ -1,0 +1,23 @@
+#ifndef SLCAN_ERR_H_
+#define SLCAN_ERR_H_
+
+
+typedef enum _Slcan_Err {
+    E_SLCAN_NO_ERROR = 0,
+    E_SLCAN_INVALID_VALUE,
+    E_SLCAN_NULL_POINTER,
+    E_SLCAN_INVALID_SIZE,
+    E_SLCAN_UNDERFLOW,
+    E_SLCAN_OVERFLOW,
+    E_SLCAN_OUT_OF_RANGE,
+    E_SLCAN_IO_ERROR,
+    E_SLCAN_OVERRUN,
+    E_SLCAN_UNDERRUN,
+    E_SLCAN_INVALID_DATA,
+    E_SLCAN_UNEXPECTED,
+    E_SLCAN_EXEC_FAIL,
+    //E_SLCAN_,
+} slcan_err_t;
+
+
+#endif /* SLCAN_ERR_H_ */

@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
 #include "defs/defs.h"
 #include "slcan_can_msg.h"
 #include "slcan_serial_io.h"
@@ -88,7 +87,7 @@ typedef struct _Slcan_Cmd_Sn_Req {
 } slcan_cmd_sn_req_t;
 
 typedef struct _Slcan_Cmd_Sn_Resp {
-    uint8_t sn;
+    uint16_t sn;
 } slcan_cmd_sn_resp_t;
 
 typedef struct _Slcan_Cmd_Set_Timestamp {
@@ -164,9 +163,10 @@ typedef struct _Slcan_Cmd {
 } slcan_cmd_t;
 
 
-EXTERN bool slcan_cmd_from_buf(slcan_cmd_t* cmd, slcan_cmd_buf_t* buf);
+EXTERN slcan_err_t slcan_cmd_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf);
 
-EXTERN bool slcan_cmd_to_buf(slcan_cmd_t* cmd, slcan_cmd_buf_t* buf);
+EXTERN slcan_err_t slcan_cmd_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf);
 
+EXTERN slcan_cmd_type_t slcan_cmd_type_for_can_msg(const slcan_can_msg_t* can_msg);
 
 #endif /* SLCAN_CMD_H_ */

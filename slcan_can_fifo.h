@@ -6,10 +6,11 @@
 #include <stdbool.h>
 #include "defs/defs.h"
 #include "slcan_can_msg.h"
+#include "slcan_conf.h"
 
 
 #ifndef SLCAN_CAN_FIFO_SIZE
-#define SLCAN_CAN_FIFO_SIZE 32
+#define SLCAN_CAN_FIFO_SIZE SLCAN_CAN_FIFO_DEFAULT_SIZE
 #endif
 
 
@@ -43,6 +44,11 @@ ALWAYS_INLINE static size_t slcan_can_fifo_remain(slcan_can_fifo_t* fifo)
 ALWAYS_INLINE static bool slcan_can_fifo_full(slcan_can_fifo_t* fifo)
 {
     return fifo->count == SLCAN_CAN_FIFO_SIZE;
+}
+
+ALWAYS_INLINE static bool slcan_can_fifo_empty(slcan_can_fifo_t* fifo)
+{
+    return fifo->count == 0;
 }
 
 EXTERN size_t slcan_can_fifo_put(slcan_can_fifo_t* fifo, const slcan_can_msg_t* msg);

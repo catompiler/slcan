@@ -11,13 +11,13 @@ typedef enum _Slcan_Port_Parity {
 } slcan_port_parity_t;
 
 typedef enum _Slcan_Port_Baud {
-    SLCAN_PORT_BAUD_U0 = 0, //!< 230400
-    SLCAN_PORT_BAUD_U1 = 1, //!< 115200
-    SLCAN_PORT_BAUD_U2 = 2, //!< 57600
-    SLCAN_PORT_BAUD_U3 = 3, //!< 38400
-    SLCAN_PORT_BAUD_U4 = 4, //!< 19200
-    SLCAN_PORT_BAUD_U5 = 5, //!< 9600
-    SLCAN_PORT_BAUD_U6 = 6, //!< 2400
+    SLCAN_PORT_BAUD_230400 = 0, //!< 230400
+    SLCAN_PORT_BAUD_115200 = 1, //!< 115200
+    SLCAN_PORT_BAUD_57600 = 2, //!< 57600
+    SLCAN_PORT_BAUD_38400 = 3, //!< 38400
+    SLCAN_PORT_BAUD_19200 = 4, //!< 19200
+    SLCAN_PORT_BAUD_9600 = 5, //!< 9600
+    SLCAN_PORT_BAUD_2400 = 6, //!< 2400
 } slcan_port_baud_t;
 
 typedef enum _Slcan_Port_Stop_Bits {

@@ -1,0 +1,73 @@
+#ifndef SLCAN_CAN_EXT_FIFO_H_
+#define SLCAN_CAN_EXT_FIFO_H_
+
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include "defs/defs.h"
+#include "slcan_can_msg.h"
+#include "slcan_future.h"
+#include "slcan_conf.h"
+
+
+#ifndef SLCAN_CAN_EXT_FIFO_SIZE
+#define SLCAN_CAN_EXT_FIFO_SIZE SLCAN_CAN_FIFO_DEFAULT_SIZE
+#endif
+
+
+typedef struct _Slcan_Can_Ext_Fifo_Data {
+    slcan_can_msg_t can_msg;
+    slcan_can_msg_extdata_t extdata;
+    slcan_future_t* future;
+} slcan_can_ext_fifo_data_t;
+
+
+typedef struct _Slcan_Can_Ext_Fifo {
+    slcan_can_ext_fifo_data_t buf[SLCAN_CAN_EXT_FIFO_SIZE];
+    size_t wptr;
+    size_t rptr;
+    size_t count;
+} slcan_can_ext_fifo_t;
+
+
+EXTERN void slcan_can_ext_fifo_init(slcan_can_ext_fifo_t* fifo);
+
+ALWAYS_INLINE static void slcan_can_ext_fifo_reset(slcan_can_ext_fifo_t* fifo)
+{
+    fifo->wptr = 0;
+    fifo->rptr = 0;
+    fifo->count = 0;
+}
+
+ALWAYS_INLINE static size_t slcan_can_ext_fifo_avail(slcan_can_ext_fifo_t* fifo)
+{
+    return fifo->count;
+}
+
+ALWAYS_INLINE static size_t slcan_can_ext_fifo_remain(slcan_can_ext_fifo_t* fifo)
+{
+    return SLCAN_CAN_EXT_FIFO_SIZE - fifo->count;
+}
+
+ALWAYS_INLINE static bool slcan_can_ext_fifo_full(slcan_can_ext_fifo_t* fifo)
+{
+    return fifo->count == SLCAN_CAN_EXT_FIFO_SIZE;
+}
+
+ALWAYS_INLINE static bool slcan_can_ext_fifo_empty(slcan_can_ext_fifo_t* fifo)
+{
+    return fifo->count == 0;
+}
+
+EXTERN size_t slcan_can_ext_fifo_put(slcan_can_ext_fifo_t* fifo, const slcan_can_msg_t* msg, const slcan_can_msg_extdata_t* extdata, slcan_future_t* future);
+
+EXTERN size_t slcan_can_ext_fifo_get(slcan_can_ext_fifo_t* fifo, slcan_can_msg_t* msg, slcan_can_msg_extdata_t* extdata, slcan_future_t** future);
+
+EXTERN size_t slcan_can_ext_fifo_peek(slcan_can_ext_fifo_t* fifo, slcan_can_msg_t* msg, slcan_can_msg_extdata_t* extdata, slcan_future_t** future);
+
+EXTERN void slcan_can_ext_fifo_data_readed(slcan_can_ext_fifo_t* fifo, size_t data_size);
+
+EXTERN void slcan_can_ext_fifo_data_written(slcan_can_ext_fifo_t* fifo, size_t data_size);
+
+
+#endif /* SLCAN_CAN_EXT_FIFO_H_ */

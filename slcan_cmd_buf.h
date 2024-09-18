@@ -31,12 +31,22 @@ ALWAYS_INLINE static uint8_t* slcan_cmd_buf_data(slcan_cmd_buf_t* buf)
     return buf->buf;
 }
 
+ALWAYS_INLINE static const uint8_t* slcan_cmd_buf_data_const(const slcan_cmd_buf_t* buf)
+{
+    return buf->buf;
+}
+
 ALWAYS_INLINE static uint8_t* slcan_cmd_buf_data_end(slcan_cmd_buf_t* buf)
 {
     return &buf->buf[buf->size];
 }
 
-ALWAYS_INLINE static size_t slcan_cmd_buf_size(slcan_cmd_buf_t* buf)
+ALWAYS_INLINE static const uint8_t* slcan_cmd_buf_data_end_const(const slcan_cmd_buf_t* buf)
+{
+    return &buf->buf[buf->size];
+}
+
+ALWAYS_INLINE static size_t slcan_cmd_buf_size(const slcan_cmd_buf_t* buf)
 {
     return buf->size;
 }

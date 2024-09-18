@@ -6,12 +6,14 @@
 // slcan
 #include "slcan.h"
 #include "slcan_serial_io_cygwin.h"
-#include "slcan_get_timestamp_cygwin.h"
+#include "slcan_master.h"
+#include "slcan_slave.h"
 
 
-static int init_slcan_master(slcan_t* sc, slcan_serial_io_t* sio, const char* serial_port_name)
+
+static int init_slcan_master(slcan_master_t* scm, slcan_t* sc, slcan_serial_io_t* sio, const char* serial_port_name)
 {
-    if(slcan_init(sc, sio, slcan_get_timestamp_cygwin) != 0){
+    if(slcan_init(sc, sio) != 0){
         printf("Cann't init slcan!\n");
         return -1;
     }
@@ -26,6 +28,12 @@ static int init_slcan_master(slcan_t* sc, slcan_serial_io_t* sio, const char* se
 
     if(slcan_configure(sc, &port_conf) != 0){
         printf("Error configuring serial port!\n");
+        slcan_deinit(sc);
+        return -1;
+    }
+
+    if(slcan_master_init(scm, sc) != 0){
+        printf("Error init slcan master!\n");
         slcan_deinit(sc);
         return -1;
     }
@@ -34,9 +42,9 @@ static int init_slcan_master(slcan_t* sc, slcan_serial_io_t* sio, const char* se
 }
 
 
-static int init_slcan_slave(slcan_t* sc, slcan_serial_io_t* sio, const char* serial_port_name)
+static int init_slcan_slave(slcan_slave_t* scs, slcan_t* sc, slcan_serial_io_t* sio, slcan_slave_callbacks_t* scb, const char* serial_port_name)
 {
-    if(slcan_init(sc, sio, slcan_get_timestamp_cygwin) != 0){
+    if(slcan_init(sc, sio) != 0){
         printf("Cann't init slcan!\n");
         return -1;
     }
@@ -55,83 +63,135 @@ static int init_slcan_slave(slcan_t* sc, slcan_serial_io_t* sio, const char* ser
         return -1;
     }
 
+    if(slcan_slave_init(scs, sc, scb) != 0){
+        printf("Error init slcan slave!\n");
+        slcan_deinit(sc);
+        return -1;
+    }
+
     return 0;
+}
+
+
+static slcan_err_t on_setup_can_std(slcan_bit_rate_t bit_rate)
+{
+    printf("setup can std: 0x%02x\n", (int)bit_rate);
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t on_setup_can_btr(uint8_t btr0, uint8_t btr1)
+{
+    printf("setup can btr: 0x%x 0x%02x\n", (int)btr0, (int)btr1);
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t on_open(void)
+{
+    printf("open can\n");
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t on_listen(void)
+{
+    printf("listen can\n");
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t on_close(void)
+{
+    printf("close can\n");
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t on_setup_uart(slcan_port_baud_t baud)
+{
+    printf("setup uart: 0x%02x\n", (int)baud);
+    return E_SLCAN_NO_ERROR;
 }
 
 
 int main(int argc, char* argv[])
 {
-    static slcan_t msc;
-    static slcan_t ssc;
+    static slcan_t master_slcan;
+    static slcan_t slave_slcan;
+
+    slcan_slave_callbacks_t scb;
+
+    static slcan_master_t master;
+    static slcan_slave_t slave;
 
     slcan_serial_io_t sio;
     slcan_serial_io_cygwin_init(&sio);
+
+    scb.on_setup_can_std = on_setup_can_std;
+    scb.on_setup_can_btr = on_setup_can_btr;
+    scb.on_open = on_open;
+    scb.on_listen = on_listen;
+    scb.on_close = on_close;
+    scb.on_setup_uart = on_setup_uart;
 
     const char* master_serial_port_name = "/dev/ttyS20";
     const char* slave_serial_port_name = "/dev/ttyS21";
 
     int res;
 
-    res = init_slcan_master(&msc, &sio, master_serial_port_name);
+    res = init_slcan_master(&master, &master_slcan, &sio, master_serial_port_name);
     if(res == -1){
         printf("Error init master slcan!\n");
         return -1;
     }
 
-    res = init_slcan_slave(&ssc, &sio, slave_serial_port_name);
+    res = init_slcan_slave(&slave, &slave_slcan, &sio, &scb, slave_serial_port_name);
     if(res == -1){
         printf("Error init slave slcan!\n");
-        slcan_deinit(&msc);
+        slcan_deinit(&master_slcan);
         return -1;
     }
     
     printf("Polling...\n");
 
-    slcan_cmd_t mcmd;
-    slcan_cmd_t scmd;
+    uint8_t hw_ver = 0, sw_ver = 0;
+    uint16_t sn = 0;
+    slcan_slave_status_t status;
 
-    memset(&mcmd, 0x0, sizeof(slcan_cmd_t));
-    memset(&scmd, 0x0, sizeof(slcan_cmd_t));
+    slcan_future_t future;
+    slcan_master_cmd_read_version(&master, &hw_ver, &sw_ver, NULL);
+    slcan_master_cmd_read_sn(&master, &sn, NULL);
+    slcan_master_cmd_setup_uart(&master, SLCAN_PORT_BAUD_115200, NULL);
+    slcan_master_cmd_setup_can_std(&master, SLCAN_BIT_RATE_250Kbit, NULL);
+    slcan_master_cmd_setup_can_btr(&master, 0x12, 0x34, NULL);
+    slcan_master_cmd_set_auto_poll(&master, false, NULL);
+    slcan_master_cmd_set_timestamp(&master, false, NULL);
+    slcan_master_cmd_open(&master, NULL);
+    slcan_master_cmd_listen(&master, NULL);
+    slcan_master_cmd_read_status(&master, &status, NULL);
+    slcan_master_cmd_close(&master, &future);
 
-
-    mcmd.type = SLCAN_CMD_TRANSMIT;
-    mcmd.mode = SLCAN_CMD_MODE_NONE;
-    mcmd.transmit.can_msg.frame_type = SLCAN_MSG_FRAME_TYPE_NORMAL;
-    mcmd.transmit.can_msg.id_type = SLCAN_MSG_ID_NORMAL;
-    mcmd.transmit.can_msg.id = 0xa5;
-    mcmd.transmit.can_msg.data_size = 8;
-    mcmd.transmit.can_msg.data[0] = 0x01;
-    mcmd.transmit.can_msg.data[1] = 0x02;
-    mcmd.transmit.can_msg.data[2] = 0x03;
-    mcmd.transmit.can_msg.data[3] = 0x04;
-    mcmd.transmit.can_msg.data[4] = 0x05;
-    mcmd.transmit.can_msg.data[5] = 0x06;
-    mcmd.transmit.can_msg.data[6] = 0x07;
-    mcmd.transmit.can_msg.data[7] = 0x08;
-    mcmd.transmit.extdata.autopoll_flag = true;
-    mcmd.transmit.extdata.has_timestamp = true;
-    mcmd.transmit.extdata.timestamp = 0x1234;
-
-    slcan_put_cmd(&msc, &mcmd);
-
-
-    int max_polls = 100;
+    int max_polls = 1000;
 
     struct timespec ts;
     ts.tv_sec = 0; ts.tv_nsec = 1000000; // 1 ms.
-    while((1) && (--max_polls != 0)){
-        slcan_poll(&msc);
-        slcan_poll(&ssc);
-        if(slcan_get_cmd(&ssc, &scmd)){
-            break;
-        }
+    while(--max_polls != 0){
+        slcan_master_poll(&master);
+        slcan_slave_poll(&slave);
+
+        if(slcan_future_done(&future)) break;
+
         nanosleep(&ts, NULL);
     }
 
+    printf("future result: %d\n", SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future)));
+
+    printf("hw version: 0x%02x\n", (unsigned int)hw_ver);
+    printf("sw version: 0x%02x\n", (unsigned int)sw_ver);
+    printf("s/n: 0x%04x\n", (unsigned int)sn);
+
+    printf("status: 0x%02x\n", (unsigned int)status);
+
     printf("Done.\n");
 
-    slcan_deinit(&msc);
-    slcan_deinit(&ssc);
+    slcan_deinit(&master_slcan);
+    slcan_deinit(&slave_slcan);
 
     return 0;
 }

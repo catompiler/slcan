@@ -10,38 +10,28 @@
 
 
 
-void slcan_get_default_port_config(slcan_port_conf_t* conf)
+slcan_err_t slcan_get_default_port_config(slcan_port_conf_t* conf)
 {
-    if(conf == NULL) return;
+    if(conf == NULL) return E_SLCAN_NULL_POINTER;
 
     conf->parity = SLCAN_PORT_PARITY_NONE;
     conf->stop_bits = SLCAN_PORT_STOP_BITS_1;
-    conf->baud = SLCAN_PORT_BAUD_U1;
+    conf->baud = SLCAN_PORT_BAUD_57600;
+
+    return E_SLCAN_NO_ERROR;
 }
 
-void slcan_get_port_config(slcan_t* sc, slcan_port_conf_t* conf)
+slcan_err_t slcan_get_port_config(slcan_t* sc, slcan_port_conf_t* conf)
 {
     assert(sc != NULL);
 
-    if(conf == NULL) return;
+    if(conf == NULL) return E_SLCAN_NULL_POINTER;
 
     conf->parity = sc->port_conf.parity;
     conf->stop_bits = sc->port_conf.stop_bits;
     conf->baud = sc->port_conf.baud;
-}
 
-
-ALWAYS_INLINE static uint32_t slcan_get_timestamp(slcan_t* sc)
-{
-    (void) sc;
-
-    assert(sc != NULL);
-
-    if(sc->get_timestamp == NULL) return 0;
-
-    time_t t_ms = sc->get_timestamp();
-
-    return (uint32_t)(t_ms & 0xffff);
+    return E_SLCAN_NO_ERROR;
 }
 
 
@@ -118,7 +108,7 @@ ALWAYS_INLINE static int slcan_serial_nbytes(slcan_t* sc, size_t* size)
 }
 
 
-static void slcan_process_incoming_data(slcan_t* sc)
+static slcan_err_t slcan_process_incoming_data(slcan_t* sc)
 {
     assert(sc != NULL);
 
@@ -136,8 +126,7 @@ static void slcan_process_incoming_data(slcan_t* sc)
         res = slcan_serial_nbytes(sc, &nbytes);
         // error.
         if(res == -1){
-            sc->errors |= SLCAN_ERROR_IO;
-            break;
+            return E_SLCAN_IO_ERROR;
         }
         // end of transfer.
         if(nbytes == 0){
@@ -151,17 +140,18 @@ static void slcan_process_incoming_data(slcan_t* sc)
                                 nbytes);
         // error.
         if(res == -1){
-            sc->errors |= SLCAN_ERROR_IO;
-            break;
+            return E_SLCAN_IO_ERROR;
         }
         // readed data size.
         nbytes = (size_t)res;
         // tell size to fifo.
         slcan_io_fifo_data_written(&sc->rxiofifo, nbytes);
     }
+
+    return E_SLCAN_NO_ERROR;
 }
 
-static void slcan_process_outcoming_data(slcan_t* sc)
+static slcan_err_t slcan_process_outcoming_data(slcan_t* sc)
 {
     assert(sc != NULL);
 
@@ -181,8 +171,7 @@ static void slcan_process_outcoming_data(slcan_t* sc)
                                 nbytes);
         // error.
         if(res == -1){
-            sc->errors |= SLCAN_ERROR_IO;
-            break;
+            return E_SLCAN_IO_ERROR;
         }
         // readed data size.
         nbytes = (size_t)res;
@@ -195,6 +184,8 @@ static void slcan_process_outcoming_data(slcan_t* sc)
         // tell size to fifo.
         slcan_io_fifo_data_readed(&sc->txiofifo, nbytes);
     }
+
+    return E_SLCAN_NO_ERROR;
 }
 
 
@@ -302,34 +293,41 @@ static bool slcan_send_all_msgs(slcan_t* sc)
 */
 
 
-static void slcan_process_incoming_cmd(slcan_t* sc)
+static slcan_err_t slcan_rx_cmd_buf_get_cmd(slcan_t* sc, slcan_cmd_t* cmd)
 {
     assert(sc != NULL);
 
-    slcan_cmd_fifo_t* cmdfifo = &sc->rxcmdfifo;
     slcan_cmd_buf_t* buf = &sc->rxcmd;
-    slcan_cmd_t cmd;
+    slcan_err_t err;
 
-    if(slcan_cmd_from_buf(&cmd, buf)){
-        if(slcan_cmd_fifo_put(cmdfifo, &cmd) == 0){
-            sc->errors |= SLCAN_ERROR_OVERRUN;
-        }
-    }else{
-        sc->errors |= SLCAN_ERROR_INVALID_DATA;
-    }
+    err = slcan_cmd_from_buf(cmd, buf);
+    if(err != E_SLCAN_NO_ERROR) return err;
 
 #if defined(SLCAN_DEBUG_INCOMING_CMDS) && SLCAN_DEBUG_INCOMING_CMDS == 1
     uint8_t* buf_data = slcan_cmd_buf_data(buf);
     buf_data[slcan_cmd_buf_size(buf)] = '\0';
-    printf("Received msg: %s\n", (char*)buf_data);
+    printf("Received msg: ");
+    if(*buf_data == '\r'){
+        printf("'\\r'\n");
+    }else if(*buf_data == '\007'){
+        printf("beep\n");
+    }else{
+        printf("%s\n", (char*)buf_data);
+    }
 #endif
 
+    return E_SLCAN_NO_ERROR;
 }
 
-static void slcan_process_rx_io_fifo(slcan_t* sc)
+static slcan_err_t slcan_rx_io_fifo_get_cmd(slcan_t* sc, slcan_cmd_t* cmd)
 {
+    assert(sc != NULL);
+
+    if(cmd == NULL) return E_SLCAN_NULL_POINTER;
+
     size_t size;
     uint8_t byte;
+    slcan_err_t err;
 
     // process data rx fifo.
     for(;;){
@@ -344,74 +342,74 @@ static void slcan_process_rx_io_fifo(slcan_t* sc)
         size = slcan_cmd_buf_put(&sc->rxcmd, byte);
         // msg buf is full.
         if(size == 0){
-            // set overrun flag.
-            sc->errors |= SLCAN_ERROR_OVERRUN;
             // reset received data.
             slcan_cmd_buf_reset(&sc->rxcmd);
-            break;
+            return E_SLCAN_OVERFLOW;
         }
 
         // end of msg.
         if((byte == SLCAN_EOM_BYTE) || (byte == SLCAN_ERR_BYTE)){
             // parse msg.
-            slcan_process_incoming_cmd(sc);
+            err = slcan_rx_cmd_buf_get_cmd(sc, cmd);
             // reset processed msg.
             slcan_cmd_buf_reset(&sc->rxcmd);
+
+            return err;
         }
     }
+
+    return E_SLCAN_UNDERFLOW;
 }
 
-static void slcan_process_tx_cmd_fifo(slcan_t* sc)
+static slcan_err_t slcan_tx_io_fifo_put_cmd(slcan_t* sc, const slcan_cmd_t* cmd)
 {
     assert(sc != NULL);
 
-    slcan_cmd_fifo_t* cmdfifo = &sc->txcmdfifo;
+    if(cmd == NULL) return E_SLCAN_NULL_POINTER;
+
     slcan_io_fifo_t* iofifo = &sc->txiofifo;
     slcan_cmd_buf_t* buf = &sc->txcmd;
-    slcan_cmd_t cmd;
+    slcan_err_t err;
 
-    // while fifo not full.
-    while(slcan_io_fifo_avail(iofifo) <= SLCAN_TXIOFIFO_WATERMARK){
-        // peek cmd.
-        if(!slcan_cmd_fifo_peek(cmdfifo, &cmd)){
-            // fifo empty.
-            break;
-        }
-        // serialize.
-        if(!slcan_cmd_to_buf(&cmd, buf)){
-            // set error.
-            sc->errors |= SLCAN_ERROR_INVALID_DATA;
-            // remove cmd from fifo.
-            slcan_cmd_fifo_data_readed(cmdfifo, 1);
-            continue;
-        }
+    // if fifo ~ full.
+    if(slcan_io_fifo_avail(iofifo) >= SLCAN_TXIOFIFO_WATERMARK){
+        return E_SLCAN_OVERFLOW;
+    }
 
-        // fifo remain size too small.
-        if(!slcan_io_fifo_write_block(iofifo, slcan_cmd_buf_data(buf), slcan_cmd_buf_size(buf))){
-            break;
-        }
+    // serialize.
+    err = slcan_cmd_to_buf(cmd, buf);
+    if(err != E_SLCAN_NO_ERROR) return err;
 
-        // remove cmd from fifo.
-        slcan_cmd_fifo_data_readed(&sc->txcmdfifo, 1);
+    // fifo remain size too small.
+    if(!slcan_io_fifo_write_block(iofifo, slcan_cmd_buf_data(buf),
+                                     slcan_cmd_buf_size(buf))){
+        return E_SLCAN_OVERFLOW;
+    }
 
 #if defined(SLCAN_DEBUG_INCOMING_CMDS) && SLCAN_DEBUG_INCOMING_CMDS == 1
-        uint8_t* buf_data = slcan_cmd_buf_data(buf);
-        buf_data[slcan_cmd_buf_size(buf)] = '\0';
-        printf("Transmitting msg: %s\n", (char*)buf_data);
+    uint8_t* buf_data = slcan_cmd_buf_data(buf);
+    buf_data[slcan_cmd_buf_size(buf)] = '\0';
+    printf("Transmitting msg: ");
+    if(*buf_data == '\r'){
+        printf("'\\r'\n");
+    }else if(*buf_data == '\007'){
+        printf("beep\n");
+    }else{
+        printf("%s\n", (char*)buf_data);
+    }
 #endif
 
-    }
+    return E_SLCAN_NO_ERROR;
 }
 
 
-int slcan_init(slcan_t* sc, slcan_serial_io_t* sio, slcan_get_timestamp_t get_timestamp)
+slcan_err_t slcan_init(slcan_t* sc, slcan_serial_io_t* sio)
 {
     assert(sc != NULL);
 
     if(sio == NULL) return -1;
 
     sc->sio = sio;
-    sc->get_timestamp = get_timestamp;
 
     slcan_get_default_port_config(&sc->port_conf);
 
@@ -419,56 +417,54 @@ int slcan_init(slcan_t* sc, slcan_serial_io_t* sio, slcan_get_timestamp_t get_ti
 
     slcan_io_fifo_init(&sc->txiofifo);
     slcan_io_fifo_init(&sc->rxiofifo);
-    slcan_cmd_fifo_init(&sc->txcmdfifo);
-    slcan_cmd_fifo_init(&sc->rxcmdfifo);
     slcan_cmd_buf_init(&sc->txcmd);
     slcan_cmd_buf_init(&sc->rxcmd);
 
-    sc->errors = 0;
-
-    sc->flags = 0;
-
-#if defined(SLCAN_AUTO_POLL_DEFAULT)
-#if SLCAN_AUTO_POLL_DEFAULT == 1
-    sc->flags |= SLCAN_FLAG_AUTO_POLL;
-#endif
-#endif
-
-#if defined(SLCAN_TIMESTAMP_DEFAULT)
-#if SLCAN_TIMESTAMP_DEFAULT == 1
-    sc->flags |= SLCAN_FLAG_TIMESTAMP;
-#endif
-#endif
+//    sc->errors = 0;
+//
+//    sc->flags = 0;
+//
+//#if defined(SLCAN_AUTO_POLL_DEFAULT)
+//#if SLCAN_AUTO_POLL_DEFAULT == 1
+//    sc->flags |= SLCAN_FLAG_AUTO_POLL;
+//#endif
+//#endif
+//
+//#if defined(SLCAN_TIMESTAMP_DEFAULT)
+//#if SLCAN_TIMESTAMP_DEFAULT == 1
+//    sc->flags |= SLCAN_FLAG_TIMESTAMP;
+//#endif
+//#endif
 
     return 0;
 }
 
-int slcan_open(slcan_t* sc, const char* serial_port_name)
+slcan_err_t slcan_open(slcan_t* sc, const char* serial_port_name)
 {
     assert(sc != NULL);
 
     int res = slcan_serial_open(sc, serial_port_name);
-    if(res == -1) return res;
+    if(res == -1) return E_SLCAN_IO_ERROR;
 
     sc->serial_port = res;
 
-    return 0;
+    return E_SLCAN_NO_ERROR;
 }
 
-int slcan_configure(slcan_t* sc, slcan_port_conf_t* port_conf)
+slcan_err_t slcan_configure(slcan_t* sc, slcan_port_conf_t* port_conf)
 {
     assert(sc != NULL);
 
     if(port_conf == NULL) port_conf = &sc->port_conf;
 
     int res = slcan_serial_configure(sc, port_conf);
-    if(res == -1) return res;
+    if(res == -1) return E_SLCAN_IO_ERROR;
 
     sc->port_conf.parity = port_conf->parity;
     sc->port_conf.stop_bits = port_conf->stop_bits;
     sc->port_conf.baud = port_conf->baud;
 
-    return 0;
+    return E_SLCAN_NO_ERROR;
 }
 
 void slcan_deinit(slcan_t* sc)
@@ -478,47 +474,41 @@ void slcan_deinit(slcan_t* sc)
     slcan_serial_close(sc);
 }
 
-int slcan_poll(slcan_t* sc)
+slcan_err_t slcan_poll(slcan_t* sc)
 {
     assert(sc != NULL);
 
     int res;
-
-
-    // process cmd tx fifo.
-    slcan_process_tx_cmd_fifo(sc);
+    slcan_err_t err;
 
 
     // poll.
     int revents = 0;
     res = slcan_serial_poll(sc, SLCAN_POLLIN | SLCAN_POLLOUT, &revents, 0);
-    if(res == -1){
-        sc->errors |= SLCAN_ERROR_IO;
-    }
+    if(res == -1) return E_SLCAN_IO_ERROR;
 
     // incoming data.
     if(revents & SLCAN_POLLIN){
-        slcan_process_incoming_data(sc);
+        err = slcan_process_incoming_data(sc);
+        if(err != E_SLCAN_NO_ERROR) return err;
     }
 
     // outcoming data.
     if(revents & SLCAN_POLLOUT){
-        slcan_process_outcoming_data(sc);
+        err = slcan_process_outcoming_data(sc);
+        if(err != E_SLCAN_NO_ERROR) return err;
     }
 
 
-    slcan_process_rx_io_fifo(sc);
-
-
-    return 0;
+    return E_SLCAN_NO_ERROR;
 }
 
-size_t slcan_get_cmd(slcan_t* sc, slcan_cmd_t* cmd)
+slcan_err_t slcan_get_cmd(slcan_t* sc, slcan_cmd_t* cmd)
 {
-    return slcan_cmd_fifo_get(&sc->rxcmdfifo, cmd);
+    return slcan_rx_io_fifo_get_cmd(sc, cmd);
 }
 
-size_t slcan_put_cmd(slcan_t* sc, const slcan_cmd_t* cmd)
+slcan_err_t slcan_put_cmd(slcan_t* sc, const slcan_cmd_t* cmd)
 {
-    return slcan_cmd_fifo_put(&sc->txcmdfifo, cmd);
+    return slcan_tx_io_fifo_put_cmd(sc, cmd);
 }
