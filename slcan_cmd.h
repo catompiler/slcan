@@ -103,12 +103,10 @@ typedef struct _Slcan_Cmd_Unknown {
 } slcan_cmd_unknown_t;
 
 
+#define SLCAN_CMD_UNKNOWN 0
 
-typedef enum _Slcan_Cmd_Type {
-    SLCAN_CMD_UNKNOWN = 0,
-    SLCAN_CMD_OK = '\r',
-    SLCAN_CMD_OK_AUTOPOLL = 'z',
-    SLCAN_CMD_ERR = '\007',
+typedef enum _Slcan_Cmd_Req_Type {
+    //SLCAN_CMD_UNKNOWN = 0,
     SLCAN_CMD_SETUP_CAN_STD = 'S',
     SLCAN_CMD_SETUP_CAN_BTR = 's',
     SLCAN_CMD_OPEN = 'O',
@@ -126,7 +124,17 @@ typedef enum _Slcan_Cmd_Type {
     SLCAN_CMD_VERSION = 'V',
     SLCAN_CMD_SN = 'N',
     SLCAN_CMD_SET_TIMESTAMP = 'Z',
-} slcan_cmd_type_t;
+} slcan_cmd_req_type_t;
+
+typedef enum _Slcan_Cmd_Resp_Type {
+    //SLCAN_CMD_UNKNOWN = 0,
+    SLCAN_CMD_OK = '\r',
+    SLCAN_CMD_OK_AUTOPOLL = 'z',
+    SLCAN_CMD_OK_AUTOPOLL_EXT = 'Z',
+    SLCAN_CMD_ERR = '\007',
+}slcan_cmd_resp_type_t;
+
+typedef uint8_t slcan_cmd_type_t;
 
 typedef enum _Slcan_Cmd_Mode {
     SLCAN_CMD_MODE_NONE = 0,

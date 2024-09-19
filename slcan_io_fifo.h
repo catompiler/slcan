@@ -5,10 +5,11 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "defs/defs.h"
+#include "slcan_conf.h"
 
 
 #ifndef SLCAN_IO_FIFO_SIZE
-#define SLCAN_IO_FIFO_SIZE 256
+#define SLCAN_IO_FIFO_SIZE SLCAN_IO_FIFO_DEFAULT_SIZE
 #endif
 
 

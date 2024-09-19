@@ -215,7 +215,7 @@ static slcan_err_t slcan_can_msg_from_buf_T(slcan_can_msg_t* can_msg, slcan_can_
     }
 
     bool autopoll = false;
-    if(cmd_data[0] == SLCAN_CMD_OK_AUTOPOLL)
+    if(cmd_data[0] == SLCAN_CMD_OK_AUTOPOLL_EXT)
         { if(buf_data_size == msg_size) return E_SLCAN_INVALID_SIZE;
           msg_size ++; cmd_data ++; autopoll = true; }
 
@@ -388,7 +388,7 @@ static slcan_err_t slcan_can_msg_from_buf_R(slcan_can_msg_t* can_msg, slcan_can_
     }
 
     bool autopoll = false;
-    if(cmd_data[0] == SLCAN_CMD_OK_AUTOPOLL)
+    if(cmd_data[0] == SLCAN_CMD_OK_AUTOPOLL_EXT)
         { if(buf_data_size == msg_size) return E_SLCAN_INVALID_SIZE;
           msg_size ++; cmd_data ++; autopoll = true; }
 
@@ -513,7 +513,7 @@ static slcan_err_t slcan_can_msg_to_buf_T(const slcan_can_msg_t* can_msg, const 
             if(slcan_cmd_buf_put(buf, digit_num_to_hex((ts_value >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
         }
         if(ed->autopoll_flag){
-            if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK_AUTOPOLL) == 0) return E_SLCAN_OVERFLOW;
+            if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK_AUTOPOLL_EXT) == 0) return E_SLCAN_OVERFLOW;
         }
     }
 
@@ -590,7 +590,7 @@ static slcan_err_t slcan_can_msg_to_buf_R(const slcan_can_msg_t* can_msg, const 
             if(slcan_cmd_buf_put(buf, digit_num_to_hex((ts_value >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
         }
         if(ed->autopoll_flag){
-            if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK_AUTOPOLL) == 0) return E_SLCAN_OVERFLOW;
+            if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK_AUTOPOLL_EXT) == 0) return E_SLCAN_OVERFLOW;
         }
     }
 

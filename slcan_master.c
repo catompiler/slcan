@@ -28,17 +28,45 @@ void slcan_master_deinit(slcan_master_t* scm)
     assert(scm != 0);
 }
 
-static slcan_err_t slcan_master_process_transmit(slcan_master_t* scm, slcan_cmd_t* cmd)
+static slcan_err_t slcan_master_process_resp_transmit(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
 {
     assert(scm != NULL);
 
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
 
+    slcan_err_t err = E_SLCAN_NO_ERROR;
+
     if(slcan_can_ext_fifo_put(&scm->rxcanfifo, &cmd->transmit.can_msg, &cmd->transmit.extdata, NULL) == 0){
-        return E_SLCAN_OVERRUN;
+        err = E_SLCAN_OVERRUN;
     }
 
-    return E_SLCAN_NO_ERROR;
+    if(resp_out != NULL){
+        slcan_future_t* future = resp_out->future;
+        if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
+    }
+
+    return err;
+}
+
+static slcan_err_t slcan_master_process_resp_poll_all(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
+{
+    assert(scm != NULL);
+
+    if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
+    if(cmd == NULL) return E_SLCAN_NULL_POINTER;
+
+    slcan_future_t* future = resp_out->future;
+
+    slcan_err_t res_err = E_SLCAN_UNEXPECTED;
+
+    if(cmd->type == SLCAN_CMD_POLL_ALL){
+        res_err = E_SLCAN_NO_ERROR;
+    }else if(cmd->type == SLCAN_CMD_ERR){
+        res_err = E_SLCAN_EXEC_FAIL;
+    }
+    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+
+    return res_err;
 }
 
 static slcan_err_t slcan_master_process_resp_ok_fail(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
@@ -62,7 +90,7 @@ static slcan_err_t slcan_master_process_resp_ok_fail(slcan_master_t* scm, slcan_
     return res_err;
 }
 
-static slcan_err_t slcan_master_process_resp_ok_z_fail(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
+static slcan_err_t slcan_master_process_resp_ok_fail_autopoll(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
 {
     assert(scm != NULL);
 
@@ -77,6 +105,8 @@ static slcan_err_t slcan_master_process_resp_ok_z_fail(slcan_master_t* scm, slca
         res_err = E_SLCAN_NO_ERROR;
     }else if(cmd->type == SLCAN_CMD_OK_AUTOPOLL){
         res_err = E_SLCAN_NO_ERROR;
+    }else if(cmd->type == SLCAN_CMD_OK_AUTOPOLL_EXT){
+        res_err = E_SLCAN_NO_ERROR;
     }else if(cmd->type == SLCAN_CMD_ERR){
         res_err = E_SLCAN_EXEC_FAIL;
     }
@@ -85,7 +115,7 @@ static slcan_err_t slcan_master_process_resp_ok_z_fail(slcan_master_t* scm, slca
     return res_err;
 }
 
-static slcan_err_t slcan_master_process_status(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
+static slcan_err_t slcan_master_process_resp_status(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
 {
     assert(scm != NULL);
 
@@ -110,7 +140,7 @@ static slcan_err_t slcan_master_process_status(slcan_master_t* scm, slcan_resp_o
     return res_err;
 }
 
-static slcan_err_t slcan_master_process_version(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
+static slcan_err_t slcan_master_process_resp_version(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
 {
     assert(scm != NULL);
 
@@ -138,7 +168,7 @@ static slcan_err_t slcan_master_process_version(slcan_master_t* scm, slcan_resp_
     return res_err;
 }
 
-static slcan_err_t slcan_master_process_sn(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
+static slcan_err_t slcan_master_process_resp_sn(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
 {
     assert(scm != NULL);
 
@@ -169,20 +199,29 @@ static slcan_err_t slcan_master_process_result(slcan_master_t* scm, slcan_cmd_t*
 
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
 
+    bool res_cmd_is_transmit = false;
+
     if(cmd->type == SLCAN_CMD_TRANSMIT ||
        cmd->type == SLCAN_CMD_TRANSMIT_EXT ||
        cmd->type == SLCAN_CMD_TRANSMIT_RTR ||
        cmd->type == SLCAN_CMD_TRANSMIT_RTR_EXT){
-        return slcan_master_process_transmit(scm, cmd);
+        res_cmd_is_transmit = true;
     }
 
     bool has_req;
     slcan_resp_out_t resp_out;
 
-    has_req = slcan_resp_out_fifo_get(&scm->respoutfifo, &resp_out) != 0;
-    if(!has_req) return E_SLCAN_UNEXPECTED;
+    has_req = slcan_resp_out_fifo_peek(&scm->respoutfifo, &resp_out) != 0;
+    if(!has_req){
+        if(res_cmd_is_transmit) return slcan_master_process_resp_transmit(scm, NULL, cmd);
+        return E_SLCAN_UNEXPECTED;
+    }
 
     slcan_cmd_type_t req_type = resp_out.req_type;
+
+    if(!res_cmd_is_transmit || req_type == SLCAN_CMD_POLL){
+        slcan_resp_out_fifo_data_readed(&scm->respoutfifo, 1);
+    }
 
     switch(req_type){
     default:
@@ -196,21 +235,29 @@ static slcan_err_t slcan_master_process_result(slcan_master_t* scm, slcan_cmd_t*
     case SLCAN_CMD_SETUP_UART:
     case SLCAN_CMD_SET_TIMESTAMP:
         return slcan_master_process_resp_ok_fail(scm, &resp_out, cmd);
-//    case SLCAN_CMD_TRANSMIT:
-//    case SLCAN_CMD_TRANSMIT_EXT:
-//    case SLCAN_CMD_TRANSMIT_RTR:
-//    case SLCAN_CMD_TRANSMIT_RTR_EXT:
-//        return slcan_master_process_transmit(scm, &resp_out, cmd);
-//    case SLCAN_CMD_POLL:
-//        return slcan_master_process_poll(scm, &resp_out, cmd);
-//    case SLCAN_CMD_POLL_ALL:
-//        return slcan_master_process_poll_all(scm, &resp_out, cmd);
+    case SLCAN_CMD_TRANSMIT:
+    case SLCAN_CMD_TRANSMIT_EXT:
+    case SLCAN_CMD_TRANSMIT_RTR:
+    case SLCAN_CMD_TRANSMIT_RTR_EXT:
+        return slcan_master_process_resp_ok_fail_autopoll(scm, &resp_out, cmd);
+    case SLCAN_CMD_POLL:
+        if(res_cmd_is_transmit){
+            return slcan_master_process_resp_transmit(scm, &resp_out, cmd);
+        }else{
+            return slcan_master_process_resp_ok_fail(scm, &resp_out, cmd);
+        }
+    case SLCAN_CMD_POLL_ALL:
+        if(res_cmd_is_transmit){
+            return slcan_master_process_resp_transmit(scm, NULL, cmd);
+        }else{
+            return slcan_master_process_resp_poll_all(scm, &resp_out, cmd);
+        }
     case SLCAN_CMD_STATUS:
-        return slcan_master_process_status(scm, &resp_out, cmd);
+        return slcan_master_process_resp_status(scm, &resp_out, cmd);
     case SLCAN_CMD_VERSION:
-        return slcan_master_process_version(scm, &resp_out, cmd);
+        return slcan_master_process_resp_version(scm, &resp_out, cmd);
     case SLCAN_CMD_SN:
-        return slcan_master_process_sn(scm, &resp_out, cmd);
+        return slcan_master_process_resp_sn(scm, &resp_out, cmd);
     }
 
     return E_SLCAN_NO_ERROR;
@@ -546,6 +593,11 @@ slcan_err_t slcan_master_send_can_msg(slcan_master_t* scm, slcan_can_msg_t* can_
 
     if(slcan_can_ext_fifo_put(&scm->txcanfifo, can_msg, NULL, future) == 0){
         return E_SLCAN_OVERRUN;
+    }
+
+    if(future){
+        //slcan_future_init(future);
+        slcan_future_start(future);
     }
 
     if(empty) slcan_master_send_can_msgs(scm);

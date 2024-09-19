@@ -59,13 +59,15 @@ static slcan_err_t slcan_slave_send_answer_ok(slcan_slave_t* scs)
     return slcan_slave_send_answer(scs, &cmd);
 }
 
-static slcan_err_t slcan_slave_send_answer_ok_autopoll(slcan_slave_t* scs)
+static slcan_err_t slcan_slave_send_answer_ok_autopoll(slcan_slave_t* scs, slcan_cmd_t* transmit_cmd)
 {
     assert(scs != NULL);
 
+    if(transmit_cmd == NULL) return E_SLCAN_NULL_POINTER;
+
     slcan_cmd_t cmd;
 
-    cmd.type = SLCAN_CMD_OK_AUTOPOLL;
+    cmd.type = (transmit_cmd->transmit.can_msg.id_type == SLCAN_MSG_ID_NORMAL) ? SLCAN_CMD_OK_AUTOPOLL : SLCAN_CMD_OK_AUTOPOLL_EXT;
     cmd.mode = SLCAN_CMD_MODE_RESPONSE;
 
     return slcan_slave_send_answer(scs, &cmd);
@@ -368,6 +370,136 @@ static slcan_err_t slcan_slave_on_status(slcan_slave_t* scs, slcan_cmd_t* cmd)
     return E_SLCAN_NO_ERROR;
 }
 
+static slcan_err_t slcan_slave_on_transmit(slcan_slave_t* scs, slcan_cmd_t* cmd)
+{
+    assert(scs != NULL);
+
+    if(cmd == NULL) return E_SLCAN_NULL_POINTER;
+    if(!(scs->flags & SLCAN_SLAVE_FLAG_OPENED)) return slcan_slave_send_answer_err(scs);
+
+    slcan_can_msg_t* can_msg = &cmd->transmit.can_msg;
+
+    if(slcan_can_ext_fifo_put(&scs->txcanfifo, can_msg, NULL, NULL) == 0){
+        scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
+        return slcan_slave_send_answer_err(scs);
+    }
+
+    slcan_err_t err;
+
+    if(scs->flags & SLCAN_SLAVE_FLAG_AUTO_POLL){
+        err = slcan_slave_send_answer_ok_autopoll(scs, cmd);
+    }else{
+        err = slcan_slave_send_answer_ok(scs);
+    }
+    if(err != E_SLCAN_NO_ERROR) return err;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t slcan_slave_send_transmit_resp_cmd(slcan_slave_t* scs, slcan_cmd_t* resp_cmd)
+{
+    assert(scs != NULL);
+
+    if(resp_cmd == NULL) return E_SLCAN_NULL_POINTER;
+
+    resp_cmd->type = slcan_cmd_type_for_can_msg(&resp_cmd->transmit.can_msg);
+    resp_cmd->mode = SLCAN_CMD_MODE_RESPONSE;
+
+    resp_cmd->transmit.extdata.autopoll_flag = false;
+
+    if(scs->flags & SLCAN_SLAVE_FLAG_TIMESTAMP){
+        if(!resp_cmd->transmit.extdata.has_timestamp){
+            resp_cmd->transmit.extdata.has_timestamp = true;
+            resp_cmd->transmit.extdata.timestamp = 0x0000;
+        }
+    }else{
+        resp_cmd->transmit.extdata.has_timestamp = false;
+    }
+
+    slcan_err_t err;
+
+    err = slcan_slave_send_answer(scs, resp_cmd);
+    if(err != E_SLCAN_NO_ERROR) return err;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t slcan_slave_on_poll(slcan_slave_t* scs, slcan_cmd_t* cmd)
+{
+    assert(scs != NULL);
+
+    (void) cmd;
+
+    if(!(scs->flags & SLCAN_SLAVE_FLAG_OPENED)) return slcan_slave_send_answer_err(scs);
+    if(scs->flags & SLCAN_SLAVE_FLAG_AUTO_POLL) return slcan_slave_send_answer_err(scs);
+
+    slcan_cmd_t resp_cmd;
+    slcan_future_t* future;
+
+    if(slcan_can_ext_fifo_peek(&scs->rxcanfifo, &resp_cmd.transmit.can_msg, &resp_cmd.transmit.extdata, &future) == 0){
+        return slcan_slave_send_answer_ok(scs);
+    }
+
+    slcan_err_t err;
+
+    err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
+
+    if(err != E_SLCAN_NO_ERROR){
+        if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
+            scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
+            return err;
+        }
+        scs->errors |= SLCAN_SLAVE_ERROR_IO;
+    }
+
+    slcan_can_ext_fifo_data_readed(&scs->rxcanfifo, 1);
+    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
+
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t slcan_slave_on_poll_all(slcan_slave_t* scs, slcan_cmd_t* cmd)
+{
+    assert(scs != NULL);
+
+    (void) cmd;
+
+    if(!(scs->flags & SLCAN_SLAVE_FLAG_OPENED)) return slcan_slave_send_answer_err(scs);
+    if(scs->flags & SLCAN_SLAVE_FLAG_AUTO_POLL) return slcan_slave_send_answer_err(scs);
+
+    slcan_cmd_t resp_cmd;
+    slcan_future_t* future;
+    slcan_err_t err;
+
+    while(slcan_can_ext_fifo_peek(&scs->rxcanfifo, &resp_cmd.transmit.can_msg, &resp_cmd.transmit.extdata, &future) != 0){
+        err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
+
+        if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
+            scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
+            break;
+        }
+
+        slcan_can_ext_fifo_data_readed(&scs->rxcanfifo, 1);
+        if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
+
+        if(err != E_SLCAN_NO_ERROR){
+            scs->errors |= SLCAN_SLAVE_ERROR_IO;
+            break;
+        }
+    }
+
+    resp_cmd.type = SLCAN_CMD_POLL_ALL;
+    resp_cmd.mode = SLCAN_CMD_MODE_RESPONSE;
+
+    err = slcan_slave_send_answer(scs, &resp_cmd);
+
+    if(err != E_SLCAN_NO_ERROR){
+        return err;
+    }
+
+    return E_SLCAN_NO_ERROR;
+}
+
 static slcan_err_t slcan_slave_dispatch(slcan_slave_t* scs, slcan_cmd_t* cmd)
 {
     assert(scs != NULL);
@@ -389,15 +521,15 @@ static slcan_err_t slcan_slave_dispatch(slcan_slave_t* scs, slcan_cmd_t* cmd)
         return slcan_slave_on_listen(scs, cmd);
     case SLCAN_CMD_CLOSE:
         return slcan_slave_on_close(scs, cmd);
-//    case SLCAN_CMD_TRANSMIT:
-//    case SLCAN_CMD_TRANSMIT_EXT:
-//    case SLCAN_CMD_TRANSMIT_RTR:
-//    case SLCAN_CMD_TRANSMIT_RTR_EXT:
-//        return slcan_slave_on_transmit(scs, cmd);
-//    case SLCAN_CMD_POLL:
-//        return slcan_slave_on_poll(scs, cmd);
-//    case SLCAN_CMD_POLL_ALL:
-//        return slcan_slave_on_poll_all(scs, cmd);
+    case SLCAN_CMD_TRANSMIT:
+    case SLCAN_CMD_TRANSMIT_EXT:
+    case SLCAN_CMD_TRANSMIT_RTR:
+    case SLCAN_CMD_TRANSMIT_RTR_EXT:
+        return slcan_slave_on_transmit(scs, cmd);
+    case SLCAN_CMD_POLL:
+        return slcan_slave_on_poll(scs, cmd);
+    case SLCAN_CMD_POLL_ALL:
+        return slcan_slave_on_poll_all(scs, cmd);
     case SLCAN_CMD_STATUS:
         return slcan_slave_on_status(scs, cmd);
     case SLCAN_CMD_SET_AUTO_POLL:
@@ -463,10 +595,19 @@ slcan_err_t slcan_slave_send_can_msg(slcan_slave_t* scs, slcan_can_msg_t* can_ms
     slcan_can_msg_extdata_t extdata;
     extdata.autopoll_flag = (scs->flags & SLCAN_SLAVE_FLAG_AUTO_POLL) != 0;
     extdata.has_timestamp = (scs->flags & SLCAN_SLAVE_FLAG_TIMESTAMP) != 0;
-    extdata.timestamp = slcan_slave_get_timestamp(scs);
+    if(extdata.has_timestamp){
+        extdata.timestamp = slcan_slave_get_timestamp(scs);
+    }else{
+        extdata.timestamp = 0x0000;
+    }
 
     if(slcan_can_ext_fifo_put(&scs->rxcanfifo, can_msg, &extdata, future) == 0){
         return E_SLCAN_OVERRUN;
+    }
+
+    if(future){
+        //slcan_future_init(future);
+        slcan_future_start(future);
     }
 
     return E_SLCAN_NO_ERROR;

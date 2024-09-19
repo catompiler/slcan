@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
+#include <stdlib.h>
 // slcan
 #include "slcan.h"
 #include "slcan_serial_io_cygwin.h"
@@ -110,8 +112,46 @@ static slcan_err_t on_setup_uart(slcan_port_baud_t baud)
 }
 
 
+static void gen_can_msg(slcan_can_msg_t* msg)
+{
+    if(msg == NULL) return;
+
+    bool id_ext = rand() & 0x1;
+    bool rtr = rand() & 0x1;
+    size_t dlc = rand() % 9;
+    uint8_t data[8];
+    uint32_t id;
+
+    int i;
+
+    if(id_ext){
+        id = rand() % 0x1fffffff;
+    }else{
+        id = rand() % 0x7ff;
+    }
+
+    if(!rtr){
+        for(i = 0; i < dlc; i ++){
+            data[i] = rand() & 0xff;
+        }
+    }
+
+    msg->frame_type = rtr ? SLCAN_MSG_FRAME_TYPE_RTR : SLCAN_MSG_FRAME_TYPE_NORMAL;
+    msg->id_type = id_ext ? SLCAN_MSG_ID_EXTENDED : SLCAN_MSG_ID_NORMAL;
+    msg->id = id;
+    msg->data_size = dlc;
+    if(!rtr){
+        for(i = 0; i < dlc; i ++){
+            msg->data[i] = data[i];
+        }
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
+    srand(time(NULL));
+
     static slcan_t master_slcan;
     static slcan_t slave_slcan;
 
@@ -150,11 +190,28 @@ int main(int argc, char* argv[])
     
     printf("Polling...\n");
 
+    slcan_future_t future_slave;
+    slcan_future_t future_master;
+
+
+    int i;
+
+
+    const size_t can_msgs_count = 5;
+    slcan_can_msg_t can_msg[can_msgs_count];
+    for(i = 0; i < can_msgs_count - 1; i ++){
+        gen_can_msg(&can_msg[i]);
+        slcan_slave_send_can_msg(&slave, &can_msg[i], NULL);
+    }
+    gen_can_msg(&can_msg[can_msgs_count - 1]);
+    slcan_slave_send_can_msg(&slave, &can_msg[can_msgs_count - 1], &future_slave);
+    //slcan_slave_send_can_msg(&slave, &can_msg[can_msgs_count - 1], NULL);
+
     uint8_t hw_ver = 0, sw_ver = 0;
     uint16_t sn = 0;
     slcan_slave_status_t status;
 
-    slcan_future_t future;
+
     slcan_master_cmd_read_version(&master, &hw_ver, &sw_ver, NULL);
     slcan_master_cmd_read_sn(&master, &sn, NULL);
     slcan_master_cmd_setup_uart(&master, SLCAN_PORT_BAUD_115200, NULL);
@@ -164,8 +221,10 @@ int main(int argc, char* argv[])
     slcan_master_cmd_set_timestamp(&master, false, NULL);
     slcan_master_cmd_open(&master, NULL);
     slcan_master_cmd_listen(&master, NULL);
+    slcan_master_cmd_poll(&master, NULL);
+    slcan_master_cmd_poll_all(&master, NULL);
     slcan_master_cmd_read_status(&master, &status, NULL);
-    slcan_master_cmd_close(&master, &future);
+    slcan_master_cmd_close(&master, &future_master);
 
     int max_polls = 1000;
 
@@ -175,12 +234,13 @@ int main(int argc, char* argv[])
         slcan_master_poll(&master);
         slcan_slave_poll(&slave);
 
-        if(slcan_future_done(&future)) break;
+        if(slcan_future_done(&future_master) && slcan_future_done(&future_slave)) break;
 
         nanosleep(&ts, NULL);
     }
 
-    printf("future result: %d\n", SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future)));
+    printf("future master result: %d\n", SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future_master)));
+    printf("future slave result: %d\n", SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future_slave)));
 
     printf("hw version: 0x%02x\n", (unsigned int)hw_ver);
     printf("sw version: 0x%02x\n", (unsigned int)sw_ver);

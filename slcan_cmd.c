@@ -46,6 +46,27 @@ static slcan_err_t slcan_cmd_ok_z_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t
 }
 
 
+static slcan_err_t slcan_cmd_ok_Z_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf)
+{
+    if(slcan_cmd_buf_size(buf) != 2) return E_SLCAN_INVALID_SIZE;
+
+    cmd->type = SLCAN_CMD_OK_AUTOPOLL_EXT;
+    cmd->mode = SLCAN_CMD_MODE_RESPONSE;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t slcan_cmd_ok_Z_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
+{
+    (void) cmd;
+
+    if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK_AUTOPOLL_EXT) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+
 static slcan_err_t slcan_cmd_err_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf)
 {
     if(slcan_cmd_buf_size(buf) != 1) return E_SLCAN_INVALID_SIZE;
@@ -687,8 +708,12 @@ slcan_err_t slcan_cmd_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf)
         return slcan_cmd_version_from_buf(cmd, buf);
     case SLCAN_CMD_SN:
         return slcan_cmd_sn_from_buf(cmd, buf);
-    case SLCAN_CMD_SET_TIMESTAMP:
-        return slcan_cmd_set_timestamp_from_buf(cmd, buf);
+    case SLCAN_CMD_SET_TIMESTAMP: // SLCAN_CMD_OK_AUTOPOLL_EXT
+        if(slcan_cmd_buf_size(buf) == 2){
+            return slcan_cmd_ok_Z_from_buf(cmd, buf);
+        }else{
+            return slcan_cmd_set_timestamp_from_buf(cmd, buf);
+        }
     }
 
     return E_SLCAN_NO_ERROR;
@@ -742,8 +767,12 @@ slcan_err_t slcan_cmd_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
         return slcan_cmd_version_to_buf(cmd, buf);
     case SLCAN_CMD_SN:
         return slcan_cmd_sn_to_buf(cmd, buf);
-    case SLCAN_CMD_SET_TIMESTAMP:
-        return slcan_cmd_set_timestamp_to_buf(cmd, buf);
+    case SLCAN_CMD_SET_TIMESTAMP: // SLCAN_CMD_OK_AUTOPOLL_EXT
+        if(cmd->mode == SLCAN_CMD_MODE_REQUEST){
+            return slcan_cmd_set_timestamp_to_buf(cmd, buf);
+        }else{
+            return slcan_cmd_ok_Z_to_buf(cmd, buf);
+        }
     }
 
     return E_SLCAN_NO_ERROR;
