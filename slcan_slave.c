@@ -424,6 +424,35 @@ static slcan_err_t slcan_slave_send_transmit_resp_cmd(slcan_slave_t* scs, slcan_
     return E_SLCAN_NO_ERROR;
 }
 
+static slcan_err_t slcan_slave_transmit_existing_can_msgs(slcan_slave_t* scs)
+{
+    assert(scs != NULL);
+
+    slcan_cmd_t resp_cmd;
+    slcan_future_t* future;
+
+    slcan_err_t err = E_SLCAN_NO_ERROR;
+
+    while(slcan_can_ext_fifo_peek(&scs->rxcanfifo, &resp_cmd.transmit.can_msg, &resp_cmd.transmit.extdata, &future) != 0){
+        err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
+
+        if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
+            scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
+            break;
+        }
+
+        slcan_can_ext_fifo_data_readed(&scs->rxcanfifo, 1);
+        if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
+
+        if(err != E_SLCAN_NO_ERROR){
+            scs->errors |= SLCAN_SLAVE_ERROR_IO;
+            break;
+        }
+    }
+
+    return err;
+}
+
 static slcan_err_t slcan_slave_on_poll(slcan_slave_t* scs, slcan_cmd_t* cmd)
 {
     assert(scs != NULL);
@@ -468,25 +497,9 @@ static slcan_err_t slcan_slave_on_poll_all(slcan_slave_t* scs, slcan_cmd_t* cmd)
     if(scs->flags & SLCAN_SLAVE_FLAG_AUTO_POLL) return slcan_slave_send_answer_err(scs);
 
     slcan_cmd_t resp_cmd;
-    slcan_future_t* future;
     slcan_err_t err;
 
-    while(slcan_can_ext_fifo_peek(&scs->rxcanfifo, &resp_cmd.transmit.can_msg, &resp_cmd.transmit.extdata, &future) != 0){
-        err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
-
-        if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
-            scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
-            break;
-        }
-
-        slcan_can_ext_fifo_data_readed(&scs->rxcanfifo, 1);
-        if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
-
-        if(err != E_SLCAN_NO_ERROR){
-            scs->errors |= SLCAN_SLAVE_ERROR_IO;
-            break;
-        }
-    }
+    slcan_slave_transmit_existing_can_msgs(scs);
 
     resp_cmd.type = SLCAN_CMD_POLL_ALL;
     resp_cmd.mode = SLCAN_CMD_MODE_RESPONSE;
@@ -560,14 +573,24 @@ slcan_err_t slcan_slave_poll(slcan_slave_t* scs)
 
     slcan_cmd_t cmd;
 
+    err = E_SLCAN_NO_ERROR;
+
     for(;;){
         err = slcan_get_cmd(scs->sc, &cmd);
+        // if no incoming commands.
+        if(err == E_SLCAN_UNDERFLOW || err == E_SLCAN_UNDERRUN){
+            err = E_SLCAN_NO_ERROR;
+            break;
+        }
         if(err != E_SLCAN_NO_ERROR) return err;
 
         err = slcan_slave_dispatch(scs, &cmd);
-        if(err == E_SLCAN_NO_ERROR){
-            return err;
-        }
+        if(err != E_SLCAN_NO_ERROR) return err;
+    }
+
+    if(scs->flags & (SLCAN_SLAVE_FLAG_OPENED | SLCAN_SLAVE_FLAG_AUTO_POLL)){
+        err = slcan_slave_transmit_existing_can_msgs(scs);
+        if(err == E_SLCAN_NO_ERROR) return err;
     }
 
     return E_SLCAN_NO_ERROR;

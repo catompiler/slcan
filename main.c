@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
     slcan_master_cmd_setup_uart(&master, SLCAN_PORT_BAUD_115200, NULL);
     slcan_master_cmd_setup_can_std(&master, SLCAN_BIT_RATE_250Kbit, NULL);
     slcan_master_cmd_setup_can_btr(&master, 0x12, 0x34, NULL);
-    slcan_master_cmd_set_auto_poll(&master, false, NULL);
+    slcan_master_cmd_set_auto_poll(&master, true, NULL);
     slcan_master_cmd_set_timestamp(&master, false, NULL);
     slcan_master_cmd_open(&master, NULL);
     slcan_master_cmd_listen(&master, NULL);
