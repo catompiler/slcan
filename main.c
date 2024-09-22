@@ -12,6 +12,16 @@
 #include "slcan_slave.h"
 
 
+#ifdef __linux
+// socat -d -d pty,rawer,echo=0,link=/tmp/ttyV0,perm=0777 pty,rawer,echo=0,link=/tmp/ttyV1,perm=0777
+#define MASTER_TTY "/tmp/ttyV0"
+#define SLAVE_TTY "/tmp/ttyV1"
+#else
+// cygwin + com0com
+#define MASTER_TTY "/dev/ttyS20"
+#define SLAVE_TTY "/dev/ttyS21"
+#endif
+
 
 static int init_slcan_master(slcan_master_t* scm, slcan_t* sc, slcan_serial_io_t* sio, const char* serial_port_name)
 {
@@ -170,8 +180,8 @@ int main(int argc, char* argv[])
     scb.on_close = on_close;
     scb.on_setup_uart = on_setup_uart;
 
-    const char* master_serial_port_name = "/dev/ttyS20";
-    const char* slave_serial_port_name = "/dev/ttyS21";
+    const char* master_serial_port_name = MASTER_TTY;
+    const char* slave_serial_port_name = SLAVE_TTY;
 
     int res;
 

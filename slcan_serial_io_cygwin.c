@@ -18,7 +18,7 @@ int slcan_serial_open(const char* serial_port_name)
 
 int slcan_serial_configure(int serial_port, slcan_port_conf_t* conf)
 {
-    static uint16_t slcan_port_bauds_impl[] = {
+    static int slcan_port_bauds_impl[] = {
         B230400,
         B115200,
         B57600,
