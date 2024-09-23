@@ -174,6 +174,8 @@ static slcan_err_t slcan_cmd_open_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf
 
 static slcan_err_t slcan_cmd_open_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OPEN) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 
@@ -194,6 +196,8 @@ static slcan_err_t slcan_cmd_listen_from_buf(slcan_cmd_t* cmd, const slcan_cmd_b
 
 static slcan_err_t slcan_cmd_listen_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_LISTEN) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 
@@ -214,6 +218,8 @@ static slcan_err_t slcan_cmd_close_from_buf(slcan_cmd_t* cmd, const slcan_cmd_bu
 
 static slcan_err_t slcan_cmd_close_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_CLOSE) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 
@@ -267,6 +273,8 @@ static slcan_err_t slcan_cmd_poll_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf
 
 static slcan_err_t slcan_cmd_poll_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_POLL) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 
@@ -287,6 +295,8 @@ static slcan_err_t slcan_cmd_poll_all_from_buf(slcan_cmd_t* cmd, const slcan_cmd
 
 static slcan_err_t slcan_cmd_poll_all_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_POLL_ALL) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 
@@ -307,6 +317,8 @@ static slcan_err_t slcan_cmd_status_req_from_buf(slcan_cmd_t* cmd, const slcan_c
 
 static slcan_err_t slcan_cmd_status_req_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_STATUS) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 
@@ -447,6 +459,8 @@ static slcan_err_t slcan_cmd_version_req_from_buf(slcan_cmd_t* cmd, const slcan_
 
 static slcan_err_t slcan_cmd_version_req_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_VERSION) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 
@@ -530,6 +544,8 @@ static slcan_err_t slcan_cmd_sn_req_from_buf(slcan_cmd_t* cmd, const slcan_cmd_b
 
 static slcan_err_t slcan_cmd_sn_req_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 {
+    (void) cmd;
+    
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_SN) == 0) return E_SLCAN_OVERFLOW;
     if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
 

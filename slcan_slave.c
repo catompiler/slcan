@@ -483,20 +483,19 @@ static slcan_err_t slcan_slave_on_poll(slcan_slave_t* scs, slcan_cmd_t* cmd)
         return slcan_slave_send_answer_ok(scs);
     }
 
-    slcan_err_t err;
-
-    err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
-
-    if(err != E_SLCAN_NO_ERROR){
-        if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
-            scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
-            return err;
-        }
-        scs->errors |= SLCAN_SLAVE_ERROR_IO;
+    slcan_err_t err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
+    if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
+        scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
+        return slcan_slave_send_answer_err(scs);
     }
 
     slcan_can_ext_fifo_data_readed(&scs->rxcanfifo, 1);
     slcan_slave_future_end(future, err);
+
+    if(err != E_SLCAN_NO_ERROR){
+        scs->errors |= SLCAN_SLAVE_ERROR_IO;
+        return slcan_slave_send_answer_err(scs);
+    }
 
     return E_SLCAN_NO_ERROR;
 }
@@ -513,16 +512,15 @@ static slcan_err_t slcan_slave_on_poll_all(slcan_slave_t* scs, slcan_cmd_t* cmd)
     slcan_cmd_t resp_cmd;
     slcan_err_t err;
 
-    slcan_slave_send_existing_can_msgs(scs);
+    slcan_err_t send_err = slcan_slave_send_existing_can_msgs(scs);
 
     resp_cmd.type = SLCAN_CMD_POLL_ALL;
     resp_cmd.mode = SLCAN_CMD_MODE_RESPONSE;
 
     err = slcan_slave_send_answer(scs, &resp_cmd);
-
-    if(err != E_SLCAN_NO_ERROR){
-        return err;
-    }
+    if(err != E_SLCAN_NO_ERROR) return err;
+    
+    if(send_err != E_SLCAN_NO_ERROR) return send_err;
 
     return E_SLCAN_NO_ERROR;
 }
@@ -531,7 +529,7 @@ static slcan_err_t slcan_slave_dispatch(slcan_slave_t* scs, slcan_cmd_t* cmd)
 {
     assert(scs != NULL);
 
-    if(cmd == NULL) return -1;
+    if(cmd == NULL) return E_SLCAN_NULL_POINTER;
 
     uint8_t cmd_type = cmd->type;
 

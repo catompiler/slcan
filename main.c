@@ -160,6 +160,9 @@ static void gen_can_msg(slcan_can_msg_t* msg)
 
 int main(int argc, char* argv[])
 {
+    (void) argc;
+    (void) argv;
+    
     srand(time(NULL));
 
     static slcan_t master_slcan;
