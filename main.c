@@ -203,18 +203,24 @@ int main(int argc, char* argv[])
     slcan_future_t future_slave;
     slcan_future_t future_master;
 
+    slcan_future_init(&future_slave);
+    slcan_future_init(&future_master);
+
+
+    const size_t slave_can_msgs_count = 5;
+    slcan_can_msg_t slave_can_msg[slave_can_msgs_count];
+
+    const size_t master_can_msgs_count = 5;
+    slcan_can_msg_t master_can_msg[master_can_msgs_count];
+
 
     int i;
-
-
-    const size_t can_msgs_count = 5;
-    slcan_can_msg_t can_msg[can_msgs_count];
-    for(i = 0; i < can_msgs_count - 1; i ++){
-        gen_can_msg(&can_msg[i]);
-        slcan_slave_send_can_msg(&slave, &can_msg[i], NULL);
+    for(i = 0; i < slave_can_msgs_count - 1; i ++){
+        gen_can_msg(&slave_can_msg[i]);
+        slcan_slave_send_can_msg(&slave, &slave_can_msg[i], NULL);
     }
-    gen_can_msg(&can_msg[can_msgs_count - 1]);
-    slcan_slave_send_can_msg(&slave, &can_msg[can_msgs_count - 1], &future_slave);
+    gen_can_msg(&slave_can_msg[slave_can_msgs_count - 1]);
+    slcan_slave_send_can_msg(&slave, &slave_can_msg[slave_can_msgs_count - 1], &future_slave);
     //slcan_slave_send_can_msg(&slave, &can_msg[can_msgs_count - 1], NULL);
 
     uint8_t hw_ver = 0, sw_ver = 0;
@@ -227,12 +233,21 @@ int main(int argc, char* argv[])
     slcan_master_cmd_setup_uart(&master, SLCAN_PORT_BAUD_115200, NULL);
     slcan_master_cmd_setup_can_std(&master, SLCAN_BIT_RATE_250Kbit, NULL);
     slcan_master_cmd_setup_can_btr(&master, 0x12, 0x34, NULL);
-    slcan_master_cmd_set_auto_poll(&master, true, NULL);
-    slcan_master_cmd_set_timestamp(&master, false, NULL);
+    slcan_master_cmd_set_auto_poll(&master, false, NULL);
+    slcan_master_cmd_set_timestamp(&master, true, NULL);
     slcan_master_cmd_open(&master, NULL);
     slcan_master_cmd_listen(&master, NULL);
     slcan_master_cmd_poll(&master, NULL);
     slcan_master_cmd_poll_all(&master, NULL);
+
+    for(i = 0; i < master_can_msgs_count - 1; i ++){
+        gen_can_msg(&master_can_msg[i]);
+        slcan_master_send_can_msg(&master, &master_can_msg[i], NULL);
+    }
+    gen_can_msg(&master_can_msg[master_can_msgs_count - 1]);
+    //slcan_master_send_can_msg(&master, &master_can_msg[master_can_msgs_count - 1], &future_master);
+    slcan_master_send_can_msg(&master, &master_can_msg[master_can_msgs_count - 1], NULL);
+
     slcan_master_cmd_read_status(&master, &status, NULL);
     slcan_master_cmd_close(&master, &future_master);
 
@@ -249,8 +264,8 @@ int main(int argc, char* argv[])
         nanosleep(&ts, NULL);
     }
 
-    printf("future master result: %d\n", SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future_master)));
-    printf("future slave result: %d\n", SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future_slave)));
+    printf("future master done: %u result: %d\n", (unsigned int)slcan_future_done(&future_master), SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future_master)));
+    printf("future slave done: %u result: %d\n", (unsigned int)slcan_future_done(&future_slave), SLCAN_FUTURE_RESULT_INT(slcan_future_result(&future_slave)));
 
     printf("hw version: 0x%02x\n", (unsigned int)hw_ver);
     printf("sw version: 0x%02x\n", (unsigned int)sw_ver);

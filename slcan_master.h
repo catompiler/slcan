@@ -9,18 +9,25 @@
 #include "slcan_conf.h"
 
 
+#define SLCAN_MASTER_TIMEOUT_S_DEFAULT 0
+#define SLCAN_MASTER_TIMEOUT_NS_DEFAULT 100000000
+
+struct timespec;
 
 typedef struct _Slcan_Master {
     slcan_t* sc;
     slcan_resp_out_fifo_t respoutfifo;
     slcan_can_ext_fifo_t rxcanfifo;
     slcan_can_ext_fifo_t txcanfifo;
+    struct timespec tp_timeout;
 } slcan_master_t;
 
 
 EXTERN slcan_err_t slcan_master_init(slcan_master_t* scm, slcan_t* sc);
 
 EXTERN void slcan_master_deinit(slcan_master_t* scm);
+
+EXTERN slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, struct timespec* tp_timeout);
 
 EXTERN slcan_err_t slcan_master_poll(slcan_master_t* scm);
 

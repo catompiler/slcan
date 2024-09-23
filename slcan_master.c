@@ -1,5 +1,7 @@
 #include "slcan_master.h"
 #include "slcan_resp_out.h"
+#include "slcan_port.h"
+#include "slcan_utils.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -20,12 +22,41 @@ slcan_err_t slcan_master_init(slcan_master_t* scm, slcan_t* sc)
     slcan_can_ext_fifo_init(&scm->rxcanfifo);
     slcan_can_ext_fifo_init(&scm->txcanfifo);
 
+    scm->tp_timeout.tv_sec = SLCAN_MASTER_TIMEOUT_S_DEFAULT;
+    scm->tp_timeout.tv_nsec = SLCAN_MASTER_TIMEOUT_NS_DEFAULT;
+
     return E_SLCAN_NO_ERROR;
 }
 
 void slcan_master_deinit(slcan_master_t* scm)
 {
     assert(scm != 0);
+}
+
+slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, struct timespec* tp_timeout)
+{
+    assert(scm != NULL);
+
+    if(tp_timeout == NULL) return E_SLCAN_NULL_POINTER;
+
+    scm->tp_timeout.tv_sec = tp_timeout->tv_sec;
+    scm->tp_timeout.tv_nsec = tp_timeout->tv_nsec;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+ALWAYS_INLINE static void slcan_master_future_start(slcan_future_t* future)
+{
+    if(future){
+        slcan_future_start(future);
+    }
+}
+
+ALWAYS_INLINE static void slcan_master_future_end(slcan_future_t* future, slcan_err_t res_err)
+{
+    if(future){
+        slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+    }
 }
 
 static slcan_err_t slcan_master_process_resp_transmit(slcan_master_t* scm, slcan_resp_out_t* resp_out, slcan_cmd_t* cmd)
@@ -40,10 +71,7 @@ static slcan_err_t slcan_master_process_resp_transmit(slcan_master_t* scm, slcan
         err = E_SLCAN_OVERRUN;
     }
 
-    if(resp_out != NULL){
-        slcan_future_t* future = resp_out->future;
-        if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
-    }
+    if(resp_out != NULL) slcan_master_future_end(resp_out->future, err);
 
     return err;
 }
@@ -55,8 +83,6 @@ static slcan_err_t slcan_master_process_resp_poll_all(slcan_master_t* scm, slcan
     if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
 
-    slcan_future_t* future = resp_out->future;
-
     slcan_err_t res_err = E_SLCAN_UNEXPECTED;
 
     if(cmd->type == SLCAN_CMD_POLL_ALL){
@@ -64,7 +90,8 @@ static slcan_err_t slcan_master_process_resp_poll_all(slcan_master_t* scm, slcan
     }else if(cmd->type == SLCAN_CMD_ERR){
         res_err = E_SLCAN_EXEC_FAIL;
     }
-    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+
+    slcan_master_future_end(resp_out->future, res_err);
 
     return res_err;
 }
@@ -76,8 +103,6 @@ static slcan_err_t slcan_master_process_resp_ok_fail(slcan_master_t* scm, slcan_
     if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
 
-    slcan_future_t* future = resp_out->future;
-
     slcan_err_t res_err = E_SLCAN_UNEXPECTED;
 
     if(cmd->type == SLCAN_CMD_OK){
@@ -85,7 +110,8 @@ static slcan_err_t slcan_master_process_resp_ok_fail(slcan_master_t* scm, slcan_
     }else if(cmd->type == SLCAN_CMD_ERR){
         res_err = E_SLCAN_EXEC_FAIL;
     }
-    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+
+    slcan_master_future_end(resp_out->future, res_err);
 
     return res_err;
 }
@@ -96,8 +122,6 @@ static slcan_err_t slcan_master_process_resp_ok_fail_autopoll(slcan_master_t* sc
 
     if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
-
-    slcan_future_t* future = resp_out->future;
 
     slcan_err_t res_err = E_SLCAN_UNEXPECTED;
 
@@ -110,7 +134,8 @@ static slcan_err_t slcan_master_process_resp_ok_fail_autopoll(slcan_master_t* sc
     }else if(cmd->type == SLCAN_CMD_ERR){
         res_err = E_SLCAN_EXEC_FAIL;
     }
-    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+
+    slcan_master_future_end(resp_out->future, res_err);
 
     return res_err;
 }
@@ -121,8 +146,6 @@ static slcan_err_t slcan_master_process_resp_status(slcan_master_t* scm, slcan_r
 
     if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
-
-    slcan_future_t* future = resp_out->future;
 
     slcan_err_t res_err = E_SLCAN_UNEXPECTED;
 
@@ -135,7 +158,8 @@ static slcan_err_t slcan_master_process_resp_status(slcan_master_t* scm, slcan_r
     }else if(cmd->type == SLCAN_CMD_ERR){
         res_err = E_SLCAN_EXEC_FAIL;
     }
-    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+
+    slcan_master_future_end(resp_out->future, res_err);
 
     return res_err;
 }
@@ -146,8 +170,6 @@ static slcan_err_t slcan_master_process_resp_version(slcan_master_t* scm, slcan_
 
     if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
-
-    slcan_future_t* future = resp_out->future;
 
     slcan_err_t res_err = E_SLCAN_UNEXPECTED;
 
@@ -163,7 +185,8 @@ static slcan_err_t slcan_master_process_resp_version(slcan_master_t* scm, slcan_
     }else if(cmd->type == SLCAN_CMD_ERR){
         res_err = E_SLCAN_EXEC_FAIL;
     }
-    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+
+    slcan_master_future_end(resp_out->future, res_err);
 
     return res_err;
 }
@@ -174,8 +197,6 @@ static slcan_err_t slcan_master_process_resp_sn(slcan_master_t* scm, slcan_resp_
 
     if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
-
-    slcan_future_t* future = resp_out->future;
 
     slcan_err_t res_err = E_SLCAN_UNEXPECTED;
 
@@ -188,7 +209,8 @@ static slcan_err_t slcan_master_process_resp_sn(slcan_master_t* scm, slcan_resp_
     }else if(cmd->type == SLCAN_CMD_ERR){
         res_err = E_SLCAN_EXEC_FAIL;
     }
-    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+
+    slcan_master_future_end(resp_out->future, res_err);
 
     return res_err;
 }
@@ -272,6 +294,9 @@ static slcan_err_t slcan_master_send_request(slcan_master_t* scm, slcan_cmd_t* c
 
     slcan_err_t err;
 
+    slcan_clock_gettime(CLOCK_MONOTONIC, &resp_out->tp_req);
+    slcan_timespec_add(&resp_out->tp_req, &scm->tp_timeout, &resp_out->tp_req);
+
     if(slcan_resp_out_fifo_put(&scm->respoutfifo, resp_out) == 0){
         return E_SLCAN_OVERRUN;
     }
@@ -281,13 +306,6 @@ static slcan_err_t slcan_master_send_request(slcan_master_t* scm, slcan_cmd_t* c
         // remove from resp out queue.
         slcan_resp_out_fifo_unput(&scm->respoutfifo);
         return err;
-    }
-
-    slcan_future_t* future = resp_out->future;
-
-    if(future){
-        //slcan_future_init(future);
-        slcan_future_start(future);
     }
 
     return E_SLCAN_NO_ERROR;
@@ -308,16 +326,20 @@ static slcan_err_t slcan_master_send_can_msg_req(slcan_master_t* scm, slcan_can_
 
     cmd.type = cmd_type;
     cmd.mode = SLCAN_CMD_MODE_REQUEST;
+
     memcpy(&cmd.transmit.can_msg, can_msg, sizeof(slcan_can_msg_t));
     memset(&cmd.transmit.extdata, 0x0, sizeof(slcan_can_msg_extdata_t));
 
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR) return err;
+
+    return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t slcan_master_send_can_msgs(slcan_master_t* scm)
+static slcan_err_t slcan_master_send_existing_can_msgs(slcan_master_t* scm)
 {
     assert(scm != NULL);
 
@@ -331,14 +353,43 @@ static slcan_err_t slcan_master_send_can_msgs(slcan_master_t* scm)
             // try again later.
             return err;
         }
+
+        // remove msg from fifo.
+        slcan_can_ext_fifo_data_readed(&scm->txcanfifo, 1);
+
+        // if request fail.
         if(err != E_SLCAN_NO_ERROR){
-            slcan_can_ext_fifo_data_readed(&scm->txcanfifo, 1);
-            if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
+            // transaction is done.
+            slcan_master_future_end(future, err);
             return err;
         }
     }
 
     return E_SLCAN_NO_ERROR;
+}
+
+static void slcan_master_process_timeouts(slcan_master_t* scm)
+{
+    assert(scm != NULL);
+
+    slcan_resp_out_t resp_out;
+    struct timespec tp_cur;
+
+    slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+
+    while(slcan_resp_out_fifo_peek(&scm->respoutfifo, &resp_out)){
+        // if timeout.
+        if(slcan_timespec_cmp(&resp_out.tp_req, &tp_cur, <)){
+            // remove msg from fifo.
+            slcan_resp_out_fifo_data_readed(&scm->respoutfifo, 1);
+            // future done.
+            slcan_master_future_end(resp_out.future, E_SLCAN_TIMEOUT);
+            // next msg.
+            continue;
+        }
+        // done.
+        break;
+    }
 }
 
 slcan_err_t slcan_master_poll(slcan_master_t* scm)
@@ -356,13 +407,20 @@ slcan_err_t slcan_master_poll(slcan_master_t* scm)
 
     for(;;){
         err = slcan_get_cmd(scm->sc, &cmd);
+        // commands fifo empty.
+        if(err == E_SLCAN_UNDERFLOW || err == E_SLCAN_UNDERRUN) break;
         if(err != E_SLCAN_NO_ERROR) return err;
 
         err = slcan_master_process_result(scm, &cmd);
         if(err != E_SLCAN_NO_ERROR) return err;
     }
 
-    return 0;
+    slcan_master_process_timeouts(scm);
+
+    err = slcan_master_send_existing_can_msgs(scm);
+    if(err != E_SLCAN_NO_ERROR) return err;
+
+    return E_SLCAN_NO_ERROR;
 }
 
 slcan_err_t slcan_master_cmd_setup_can_std(slcan_master_t* scm, slcan_bit_rate_t bit_rate, slcan_future_t* future)
@@ -379,7 +437,14 @@ slcan_err_t slcan_master_cmd_setup_can_std(slcan_master_t* scm, slcan_bit_rate_t
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_setup_can_btr(slcan_master_t* scm, uint16_t btr0, uint16_t btr1, slcan_future_t* future)
@@ -397,7 +462,14 @@ slcan_err_t slcan_master_cmd_setup_can_btr(slcan_master_t* scm, uint16_t btr0, u
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_open(slcan_master_t* scm, slcan_future_t* future)
@@ -413,7 +485,14 @@ slcan_err_t slcan_master_cmd_open(slcan_master_t* scm, slcan_future_t* future)
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_listen(slcan_master_t* scm, slcan_future_t* future)
@@ -429,7 +508,14 @@ slcan_err_t slcan_master_cmd_listen(slcan_master_t* scm, slcan_future_t* future)
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_close(slcan_master_t* scm, slcan_future_t* future)
@@ -445,7 +531,14 @@ slcan_err_t slcan_master_cmd_close(slcan_master_t* scm, slcan_future_t* future)
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 EXTERN slcan_err_t slcan_master_cmd_poll(slcan_master_t* scm, slcan_future_t* future)
@@ -461,7 +554,14 @@ EXTERN slcan_err_t slcan_master_cmd_poll(slcan_master_t* scm, slcan_future_t* fu
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 EXTERN slcan_err_t slcan_master_cmd_poll_all(slcan_master_t* scm, slcan_future_t* future)
@@ -477,7 +577,14 @@ EXTERN slcan_err_t slcan_master_cmd_poll_all(slcan_master_t* scm, slcan_future_t
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_read_status(slcan_master_t* scm, slcan_slave_status_t* status, slcan_future_t* future)
@@ -494,7 +601,14 @@ slcan_err_t slcan_master_cmd_read_status(slcan_master_t* scm, slcan_slave_status
     resp_out.future = future;
     resp_out.status.status = status;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_set_auto_poll(slcan_master_t* scm, bool enable, slcan_future_t* future)
@@ -511,7 +625,14 @@ slcan_err_t slcan_master_cmd_set_auto_poll(slcan_master_t* scm, bool enable, slc
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_setup_uart(slcan_master_t* scm, slcan_port_baud_t baud, slcan_future_t* future)
@@ -528,7 +649,14 @@ slcan_err_t slcan_master_cmd_setup_uart(slcan_master_t* scm, slcan_port_baud_t b
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_read_version(slcan_master_t* scm, uint8_t* hw_version, uint8_t* sw_version, slcan_future_t* future)
@@ -546,7 +674,14 @@ slcan_err_t slcan_master_cmd_read_version(slcan_master_t* scm, uint8_t* hw_versi
     resp_out.version.hw_version = hw_version;
     resp_out.version.sw_version = sw_version;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_read_sn(slcan_master_t* scm, uint16_t* sn, slcan_future_t* future)
@@ -563,7 +698,14 @@ slcan_err_t slcan_master_cmd_read_sn(slcan_master_t* scm, uint16_t* sn, slcan_fu
     resp_out.future = future;
     resp_out.sn.sn = sn;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_cmd_set_timestamp(slcan_master_t* scm, bool enable, slcan_future_t* future)
@@ -580,7 +722,14 @@ slcan_err_t slcan_master_cmd_set_timestamp(slcan_master_t* scm, bool enable, slc
     resp_out.req_type = cmd.type;
     resp_out.future = future;
 
-    return slcan_master_send_request(scm, &cmd, &resp_out);
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
 }
 
 slcan_err_t slcan_master_send_can_msg(slcan_master_t* scm, slcan_can_msg_t* can_msg, slcan_future_t* future)
@@ -591,16 +740,17 @@ slcan_err_t slcan_master_send_can_msg(slcan_master_t* scm, slcan_can_msg_t* can_
 
     bool empty = slcan_can_ext_fifo_empty(&scm->txcanfifo);
 
+    slcan_master_future_start(future);
+
     if(slcan_can_ext_fifo_put(&scm->txcanfifo, can_msg, NULL, future) == 0){
+        slcan_master_future_end(future, E_SLCAN_OVERRUN);
         return E_SLCAN_OVERRUN;
     }
 
-    if(future){
-        //slcan_future_init(future);
-        slcan_future_start(future);
+    if(empty){
+        slcan_err_t err = slcan_master_send_existing_can_msgs(scm);
+        if(err != E_SLCAN_NO_ERROR) return err;
     }
-
-    if(empty) slcan_master_send_can_msgs(scm);
 
     return E_SLCAN_NO_ERROR;
 }

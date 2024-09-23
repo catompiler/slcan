@@ -3,6 +3,7 @@
 
 
 #include <stdint.h>
+#include <time.h>
 #include "slcan_future.h"
 #include "slcan_cmd.h"
 #include "slcan_slave_status.h"
@@ -60,6 +61,7 @@ typedef struct _Slcan_Resp_Out {
     //slcan_cmd_t cmd_resp;
     slcan_cmd_type_t req_type;
     slcan_future_t* future;
+    struct timespec tp_req;
     union {
         slcan_resp_out_setup_can_std_t setup_can_std;
         slcan_resp_out_setup_can_btr_t setup_can_btr;

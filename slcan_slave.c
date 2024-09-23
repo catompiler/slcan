@@ -32,6 +32,20 @@ void slcan_slave_deinit(slcan_slave_t* scs)
     assert(scs != NULL);
 }
 
+ALWAYS_INLINE static void slcan_slave_future_start(slcan_future_t* future)
+{
+    if(future){
+        slcan_future_start(future);
+    }
+}
+
+ALWAYS_INLINE static void slcan_slave_future_end(slcan_future_t* future, slcan_err_t res_err)
+{
+    if(future){
+        slcan_future_finish(future, SLCAN_FUTURE_RESULT(res_err));
+    }
+}
+
 static slcan_err_t slcan_slave_send_answer(slcan_slave_t* scs, slcan_cmd_t* cmd)
 {
     assert(scs != NULL);
@@ -402,55 +416,55 @@ static slcan_err_t slcan_slave_send_transmit_resp_cmd(slcan_slave_t* scs, slcan_
 
     if(resp_cmd == NULL) return E_SLCAN_NULL_POINTER;
 
-    resp_cmd->type = slcan_cmd_type_for_can_msg(&resp_cmd->transmit.can_msg);
+    slcan_cmd_type_t cmd_type;
+
+    cmd_type = slcan_cmd_type_for_can_msg(&resp_cmd->transmit.can_msg);
+    if(cmd_type == SLCAN_CMD_UNKNOWN) return E_SLCAN_INVALID_DATA;
+
+    resp_cmd->type = cmd_type;
     resp_cmd->mode = SLCAN_CMD_MODE_RESPONSE;
 
     resp_cmd->transmit.extdata.autopoll_flag = false;
-
     if(scs->flags & SLCAN_SLAVE_FLAG_TIMESTAMP){
-        if(!resp_cmd->transmit.extdata.has_timestamp){
-            resp_cmd->transmit.extdata.has_timestamp = true;
-            resp_cmd->transmit.extdata.timestamp = 0x0000;
-        }
+        resp_cmd->transmit.extdata.has_timestamp = true;
     }else{
         resp_cmd->transmit.extdata.has_timestamp = false;
     }
 
-    slcan_err_t err;
-
-    err = slcan_slave_send_answer(scs, resp_cmd);
+    slcan_err_t err = slcan_slave_send_answer(scs, resp_cmd);
     if(err != E_SLCAN_NO_ERROR) return err;
 
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t slcan_slave_transmit_existing_can_msgs(slcan_slave_t* scs)
+static slcan_err_t slcan_slave_send_existing_can_msgs(slcan_slave_t* scs)
 {
     assert(scs != NULL);
 
+    slcan_err_t err;
     slcan_cmd_t resp_cmd;
     slcan_future_t* future;
 
-    slcan_err_t err = E_SLCAN_NO_ERROR;
-
     while(slcan_can_ext_fifo_peek(&scs->rxcanfifo, &resp_cmd.transmit.can_msg, &resp_cmd.transmit.extdata, &future) != 0){
         err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
-
         if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
             scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
-            break;
+            // try again later.
+            return err;
         }
 
+        // remove msg from fifo.
         slcan_can_ext_fifo_data_readed(&scs->rxcanfifo, 1);
-        if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
+        // mesage sending done.
+        slcan_slave_future_end(future, err);
 
         if(err != E_SLCAN_NO_ERROR){
             scs->errors |= SLCAN_SLAVE_ERROR_IO;
-            break;
+            return err;
         }
     }
 
-    return err;
+    return E_SLCAN_NO_ERROR;
 }
 
 static slcan_err_t slcan_slave_on_poll(slcan_slave_t* scs, slcan_cmd_t* cmd)
@@ -482,7 +496,7 @@ static slcan_err_t slcan_slave_on_poll(slcan_slave_t* scs, slcan_cmd_t* cmd)
     }
 
     slcan_can_ext_fifo_data_readed(&scs->rxcanfifo, 1);
-    if(future) slcan_future_finish(future, SLCAN_FUTURE_RESULT(err));
+    slcan_slave_future_end(future, err);
 
     return E_SLCAN_NO_ERROR;
 }
@@ -499,7 +513,7 @@ static slcan_err_t slcan_slave_on_poll_all(slcan_slave_t* scs, slcan_cmd_t* cmd)
     slcan_cmd_t resp_cmd;
     slcan_err_t err;
 
-    slcan_slave_transmit_existing_can_msgs(scs);
+    slcan_slave_send_existing_can_msgs(scs);
 
     resp_cmd.type = SLCAN_CMD_POLL_ALL;
     resp_cmd.mode = SLCAN_CMD_MODE_RESPONSE;
@@ -560,6 +574,13 @@ static slcan_err_t slcan_slave_dispatch(slcan_slave_t* scs, slcan_cmd_t* cmd)
     return E_SLCAN_NO_ERROR;
 }
 
+ALWAYS_INLINE static bool slcan_slave_can_send_existing_messages(slcan_slave_t* scs)
+{
+    assert(scs != NULL);
+
+    return scs->flags & (SLCAN_SLAVE_FLAG_OPENED | SLCAN_SLAVE_FLAG_AUTO_POLL);
+}
+
 slcan_err_t slcan_slave_poll(slcan_slave_t* scs)
 {
     assert(scs != 0);
@@ -573,33 +594,26 @@ slcan_err_t slcan_slave_poll(slcan_slave_t* scs)
 
     slcan_cmd_t cmd;
 
-    err = E_SLCAN_NO_ERROR;
-
     for(;;){
         err = slcan_get_cmd(scs->sc, &cmd);
         // if no incoming commands.
-        if(err == E_SLCAN_UNDERFLOW || err == E_SLCAN_UNDERRUN){
-            err = E_SLCAN_NO_ERROR;
-            break;
-        }
+        if(err == E_SLCAN_UNDERFLOW || err == E_SLCAN_UNDERRUN) break;
         if(err != E_SLCAN_NO_ERROR) return err;
 
         err = slcan_slave_dispatch(scs, &cmd);
         if(err != E_SLCAN_NO_ERROR) return err;
     }
 
-    if(scs->flags & (SLCAN_SLAVE_FLAG_OPENED | SLCAN_SLAVE_FLAG_AUTO_POLL)){
-        err = slcan_slave_transmit_existing_can_msgs(scs);
-        if(err == E_SLCAN_NO_ERROR) return err;
+    if(slcan_slave_can_send_existing_messages(scs)){
+        err = slcan_slave_send_existing_can_msgs(scs);
+        if(err != E_SLCAN_NO_ERROR) return err;
     }
 
     return E_SLCAN_NO_ERROR;
 }
 
-static uint16_t slcan_slave_get_timestamp(slcan_slave_t* scs)
+static uint16_t slcan_slave_get_timestamp(void)
 {
-    (void) scs;
-
     struct timespec ts;
 
     if(slcan_clock_gettime(CLOCK_MONOTONIC, &ts) != 0) return 0;
@@ -615,22 +629,24 @@ slcan_err_t slcan_slave_send_can_msg(slcan_slave_t* scs, slcan_can_msg_t* can_ms
 
     if(can_msg == NULL) return E_SLCAN_NULL_POINTER;
 
+    bool empty = slcan_can_ext_fifo_empty(&scs->rxcanfifo);
+
     slcan_can_msg_extdata_t extdata;
-    extdata.autopoll_flag = (scs->flags & SLCAN_SLAVE_FLAG_AUTO_POLL) != 0;
-    extdata.has_timestamp = (scs->flags & SLCAN_SLAVE_FLAG_TIMESTAMP) != 0;
-    if(extdata.has_timestamp){
-        extdata.timestamp = slcan_slave_get_timestamp(scs);
-    }else{
-        extdata.timestamp = 0x0000;
-    }
+
+    extdata.autopoll_flag = false;
+    extdata.has_timestamp = false;
+    extdata.timestamp = slcan_slave_get_timestamp();
+
+    slcan_slave_future_start(future);
 
     if(slcan_can_ext_fifo_put(&scs->rxcanfifo, can_msg, &extdata, future) == 0){
+        slcan_slave_future_end(future, E_SLCAN_OVERRUN);
         return E_SLCAN_OVERRUN;
     }
 
-    if(future){
-        //slcan_future_init(future);
-        slcan_future_start(future);
+    if(empty && slcan_slave_can_send_existing_messages(scs)){
+        slcan_err_t err = slcan_slave_send_existing_can_msgs(scs);
+        if(err != E_SLCAN_NO_ERROR) return err;
     }
 
     return E_SLCAN_NO_ERROR;

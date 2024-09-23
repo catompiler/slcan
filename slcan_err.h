@@ -16,6 +16,7 @@ typedef enum _Slcan_Err {
     E_SLCAN_INVALID_DATA,
     E_SLCAN_UNEXPECTED,
     E_SLCAN_EXEC_FAIL,
+    E_SLCAN_TIMEOUT,
     //E_SLCAN_,
 } slcan_err_t;
 

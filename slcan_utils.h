@@ -21,4 +21,31 @@ ALWAYS_INLINE static uint8_t digit_hex_to_num(uint8_t digit)
     return digit;
 }
 
+
+#define slcan_timespec_add(TPU, TPV, TPR)\
+    do{\
+        (TPR)->tv_sec  = (TPU)->tv_sec  + (TPV)->tv_sec;\
+        (TPR)->tv_nsec = (TPU)->tv_nsec + (TPV)->tv_nsec;\
+        if((TPR)->tv_nsec >= 1000000000){\
+            (TPR)->tv_nsec -= 1000000000;\
+            (TPR)->tv_sec  += 1;\
+        }\
+    }while(0)
+
+#define slcan_timespec_sub(TPU, TPV, TPR)\
+    do{\
+        (TPR)->tv_sec  = (TPU)->tv_sec  - (TPV)->tv_sec;\
+        (TPR)->tv_nsec = (TPU)->tv_nsec - (TPV)->tv_nsec;\
+        if((TPR)->tv_nsec < 0){\
+            (TPR)->tv_nsec += 1000000000;\
+            (TPR)->tv_sec  -= 1;\
+        }\
+    while(0)
+
+#define slcan_timespec_cmp(TPU, TPV, cmp)\
+        (((TPU)->tv_sec == (TPV)->tv_sec) ?\
+                ((TPU)->tv_nsec cmp (TPV)->tv_nsec) :\
+                ((TPU)->tv_sec cmp (TPV)->tv_sec))
+
+
 #endif /* SLCAN_UTILS_H_ */
