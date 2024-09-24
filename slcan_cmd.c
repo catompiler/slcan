@@ -796,16 +796,16 @@ slcan_err_t slcan_cmd_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
 
 slcan_cmd_type_t slcan_cmd_type_for_can_msg(const slcan_can_msg_t* can_msg)
 {
-    if(can_msg->frame_type == SLCAN_MSG_FRAME_TYPE_NORMAL){
-        if(can_msg->id_type == SLCAN_MSG_ID_NORMAL){
+    if(can_msg->frame_type == SLCAN_CAN_FRAME_NORMAL){
+        if(can_msg->id_type == SLCAN_CAN_ID_NORMAL){
             return SLCAN_CMD_TRANSMIT;
-        }else if(can_msg->id_type == SLCAN_MSG_ID_EXTENDED){
+        }else if(can_msg->id_type == SLCAN_CAN_ID_EXTENDED){
             return SLCAN_CMD_TRANSMIT_EXT;
         }
-    }else if(can_msg->frame_type == SLCAN_MSG_FRAME_TYPE_RTR){
-        if(can_msg->id_type == SLCAN_MSG_ID_NORMAL){
+    }else if(can_msg->frame_type == SLCAN_CAN_FRAME_RTR){
+        if(can_msg->id_type == SLCAN_CAN_ID_NORMAL){
             return SLCAN_CMD_TRANSMIT_RTR;
-        }else if(can_msg->id_type == SLCAN_MSG_ID_EXTENDED){
+        }else if(can_msg->id_type == SLCAN_CAN_ID_EXTENDED){
             return SLCAN_CMD_TRANSMIT_RTR_EXT;
         }
     }

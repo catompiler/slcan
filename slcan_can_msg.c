@@ -9,24 +9,24 @@ bool slcan_can_msg_is_valid(const slcan_can_msg_t* msg)
 {
     if(msg == NULL) return false;
 
-    if(msg->data_size > 8) return false;
+    if(msg->dlc > SLCAN_CAN_DATA_SIZE_MAX) return false;
 
     switch(msg->id_type){
     default:
         return false;
-    case SLCAN_MSG_ID_NORMAL:
-        if(msg->id > 0x7ff) return false;
+    case SLCAN_CAN_ID_NORMAL:
+        if(msg->id > SLCAN_CAN_ID_NORMAL_MAX) return false;
         break;
-    case SLCAN_MSG_ID_EXTENDED:
-        if(msg->id > 0x1fffffff) return false;
+    case SLCAN_CAN_ID_EXTENDED:
+        if(msg->id > SLCAN_CAN_ID_EXTENDED_MAX) return false;
         break;
     }
 
     switch(msg->frame_type){
     default:
         return false;
-    case SLCAN_MSG_FRAME_TYPE_NORMAL:
-    case SLCAN_MSG_FRAME_TYPE_RTR:
+    case SLCAN_CAN_FRAME_NORMAL:
+    case SLCAN_CAN_FRAME_RTR:
         break;
     }
 
@@ -80,10 +80,10 @@ static slcan_err_t slcan_can_msg_from_buf_t(slcan_can_msg_t* can_msg, slcan_can_
         if(!isxdigit(cmd_data[i])) return E_SLCAN_INVALID_DATA;
     }
 
-    can_msg->frame_type = SLCAN_MSG_FRAME_TYPE_NORMAL;
-    can_msg->id_type = SLCAN_MSG_ID_NORMAL;
+    can_msg->frame_type = SLCAN_CAN_FRAME_NORMAL;
+    can_msg->id_type = SLCAN_CAN_ID_NORMAL;
     can_msg->id = id;
-    can_msg->data_size = data_size;
+    can_msg->dlc = data_size;
 
     uint8_t byte;
     for(i = 0; i < data_size; i ++){
@@ -181,10 +181,10 @@ static slcan_err_t slcan_can_msg_from_buf_T(slcan_can_msg_t* can_msg, slcan_can_
         if(!isxdigit(cmd_data[i])) return E_SLCAN_INVALID_DATA;
     }
 
-    can_msg->frame_type = SLCAN_MSG_FRAME_TYPE_NORMAL;
-    can_msg->id_type = SLCAN_MSG_ID_EXTENDED;
+    can_msg->frame_type = SLCAN_CAN_FRAME_NORMAL;
+    can_msg->id_type = SLCAN_CAN_ID_EXTENDED;
     can_msg->id = id;
-    can_msg->data_size = data_size;
+    can_msg->dlc = data_size;
 
     uint8_t byte;
     for(i = 0; i < data_size; i ++){
@@ -272,10 +272,10 @@ static slcan_err_t slcan_can_msg_from_buf_r(slcan_can_msg_t* can_msg, slcan_can_
     size_t msg_size = (1 + 3 + 1 + 0 + 0 + 1 /* EOM */);
     if(buf_data_size < msg_size) return E_SLCAN_INVALID_SIZE;
 
-    can_msg->frame_type = SLCAN_MSG_FRAME_TYPE_RTR;
-    can_msg->id_type = SLCAN_MSG_ID_NORMAL;
+    can_msg->frame_type = SLCAN_CAN_FRAME_RTR;
+    can_msg->id_type = SLCAN_CAN_ID_NORMAL;
     can_msg->id = id;
-    can_msg->data_size = data_size;
+    can_msg->dlc = data_size;
 
     // timestamp.
     bool ts_valid = false;
@@ -361,10 +361,10 @@ static slcan_err_t slcan_can_msg_from_buf_R(slcan_can_msg_t* can_msg, slcan_can_
     size_t msg_size = (1 + 8 + 1 + 0 + 0 + 1 /* EOM */);
     if(buf_data_size < msg_size) return E_SLCAN_INVALID_SIZE;
 
-    can_msg->frame_type = SLCAN_MSG_FRAME_TYPE_RTR;
-    can_msg->id_type = SLCAN_MSG_ID_EXTENDED;
+    can_msg->frame_type = SLCAN_CAN_FRAME_RTR;
+    can_msg->id_type = SLCAN_CAN_ID_EXTENDED;
     can_msg->id = id;
-    can_msg->data_size = data_size;
+    can_msg->dlc = data_size;
 
     // timestamp.
     bool ts_valid = false;
@@ -447,11 +447,11 @@ static slcan_err_t slcan_can_msg_to_buf_t(const slcan_can_msg_t* can_msg, const 
     if(slcan_cmd_buf_put(buf, digit_num_to_hex((id >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
 
     // data_size.
-    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->data_size)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->dlc)) == 0) return E_SLCAN_OVERFLOW;
 
     int i;
     // data.
-    for(i = 0; i < can_msg->data_size; i ++){
+    for(i = 0; i < can_msg->dlc; i ++){
         if(slcan_cmd_buf_put(buf, digit_num_to_hex((can_msg->data[i] >> 4) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
         if(slcan_cmd_buf_put(buf, digit_num_to_hex((can_msg->data[i] >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
     }
@@ -495,11 +495,11 @@ static slcan_err_t slcan_can_msg_to_buf_T(const slcan_can_msg_t* can_msg, const 
     if(slcan_cmd_buf_put(buf, digit_num_to_hex((id >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
 
     // data_size.
-    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->data_size)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->dlc)) == 0) return E_SLCAN_OVERFLOW;
 
     int i;
     // data.
-    for(i = 0; i < can_msg->data_size; i ++){
+    for(i = 0; i < can_msg->dlc; i ++){
         if(slcan_cmd_buf_put(buf, digit_num_to_hex((can_msg->data[i] >> 4) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
         if(slcan_cmd_buf_put(buf, digit_num_to_hex((can_msg->data[i] >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
     }
@@ -538,7 +538,7 @@ static slcan_err_t slcan_can_msg_to_buf_r(const slcan_can_msg_t* can_msg, const 
     if(slcan_cmd_buf_put(buf, digit_num_to_hex((id >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
 
     // data_size.
-    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->data_size)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->dlc)) == 0) return E_SLCAN_OVERFLOW;
 
     if(ed){
         if(ed->has_timestamp){
@@ -579,7 +579,7 @@ static slcan_err_t slcan_can_msg_to_buf_R(const slcan_can_msg_t* can_msg, const 
     if(slcan_cmd_buf_put(buf, digit_num_to_hex((id >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
 
     // data_size.
-    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->data_size)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex(can_msg->dlc)) == 0) return E_SLCAN_OVERFLOW;
 
     if(ed){
         if(ed->has_timestamp){
@@ -603,14 +603,14 @@ slcan_err_t slcan_can_msg_to_buf(const slcan_can_msg_t* can_msg, const slcan_can
 {
     if(can_msg == NULL || cmd == NULL) return E_SLCAN_NULL_POINTER;
 
-    if(can_msg->frame_type == SLCAN_MSG_FRAME_TYPE_NORMAL){
-        if(can_msg->id_type == SLCAN_MSG_ID_NORMAL){
+    if(can_msg->frame_type == SLCAN_CAN_FRAME_NORMAL){
+        if(can_msg->id_type == SLCAN_CAN_ID_NORMAL){
             return slcan_can_msg_to_buf_t(can_msg, ed, cmd);
         }else{ //SLCAN_MSG_ID_EXTENDED
             return slcan_can_msg_to_buf_T(can_msg, ed, cmd);
         }
     }else{ // SLCAN_MSG_FRAME_TYPE_RTR
-        if(can_msg->id_type == SLCAN_MSG_ID_NORMAL){
+        if(can_msg->id_type == SLCAN_CAN_ID_NORMAL){
             return slcan_can_msg_to_buf_r(can_msg, ed, cmd);
         }else{ //SLCAN_MSG_ID_EXTENDED
             return slcan_can_msg_to_buf_R(can_msg, ed, cmd);

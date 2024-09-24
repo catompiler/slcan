@@ -81,7 +81,7 @@ static slcan_err_t slcan_slave_send_answer_ok_autopoll(slcan_slave_t* scs, slcan
 
     slcan_cmd_t cmd;
 
-    cmd.type = (transmit_cmd->transmit.can_msg.id_type == SLCAN_MSG_ID_NORMAL) ? SLCAN_CMD_OK_AUTOPOLL : SLCAN_CMD_OK_AUTOPOLL_EXT;
+    cmd.type = (transmit_cmd->transmit.can_msg.id_type == SLCAN_CAN_ID_NORMAL) ? SLCAN_CMD_OK_AUTOPOLL : SLCAN_CMD_OK_AUTOPOLL_EXT;
     cmd.mode = SLCAN_CMD_MODE_RESPONSE;
 
     return slcan_slave_send_answer(scs, &cmd);

@@ -146,10 +146,10 @@ static void gen_can_msg(slcan_can_msg_t* msg)
         }
     }
 
-    msg->frame_type = rtr ? SLCAN_MSG_FRAME_TYPE_RTR : SLCAN_MSG_FRAME_TYPE_NORMAL;
-    msg->id_type = id_ext ? SLCAN_MSG_ID_EXTENDED : SLCAN_MSG_ID_NORMAL;
+    msg->frame_type = rtr ? SLCAN_CAN_FRAME_RTR : SLCAN_CAN_FRAME_NORMAL;
+    msg->id_type = id_ext ? SLCAN_CAN_ID_EXTENDED : SLCAN_CAN_ID_NORMAL;
     msg->id = id;
-    msg->data_size = dlc;
+    msg->dlc = dlc;
     if(!rtr){
         for(i = 0; i < dlc; i ++){
             msg->data[i] = data[i];
