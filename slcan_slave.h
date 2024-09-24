@@ -2,11 +2,17 @@
 #define SLCAN_SLAVE_H_
 
 #include "slcan.h"
+#include "slcan_can_fifo.h"
 #include "slcan_can_ext_fifo.h"
 #include "slcan_serial_io.h"
 #include "slcan_future.h"
 #include "slcan_conf.h"
 
+
+
+#define SLCAN_SLAVE_TIMESTAMP_DEFAULT 0
+
+#define SLCAN_SLAVE_AUTO_POLL_DEFAULT 0
 
 
 typedef slcan_err_t (*slcan_on_setup_can_std_t)(slcan_bit_rate_t bit_rate);
@@ -54,7 +60,7 @@ typedef struct _Slcan_Slave {
     slcan_t* sc;
     slcan_slave_callbacks_t* cb;
     slcan_can_ext_fifo_t rxcanfifo;
-    slcan_can_ext_fifo_t txcanfifo;
+    slcan_can_fifo_t txcanfifo;
     slcan_slave_flags_t flags;
     slcan_slave_errors_t errors;
 } slcan_slave_t;

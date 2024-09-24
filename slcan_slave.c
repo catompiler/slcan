@@ -19,10 +19,22 @@ slcan_err_t slcan_slave_init(slcan_slave_t* scs, slcan_t* sc, slcan_slave_callba
     scs->cb = cb;
 
     slcan_can_ext_fifo_init(&scs->rxcanfifo);
-    slcan_can_ext_fifo_init(&scs->txcanfifo);
+    slcan_can_fifo_init(&scs->txcanfifo);
 
     scs->flags = SLCAN_SLAVE_FLAG_NONE;
     scs->errors = SLCAN_SLAVE_ERROR_NONE;
+
+#if defined(SLCAN_SLAVE_AUTO_POLL_DEFAULT)
+#if SLCAN_SLAVE_AUTO_POLL_DEFAULT == 1
+    scs->flags |= SLCAN_SLAVE_FLAG_AUTO_POLL;
+#endif
+#endif
+
+#if defined(SLCAN_SLAVE_TIMESTAMP_DEFAULT)
+#if SLCAN_SLAVE_TIMESTAMP_DEFAULT == 1
+    scs->flags |= SLCAN_SLAVE_FLAG_TIMESTAMP;
+#endif
+#endif
 
     return E_SLCAN_NO_ERROR;
 }
@@ -364,7 +376,7 @@ static slcan_err_t slcan_slave_on_status(slcan_slave_t* scs, slcan_cmd_t* cmd)
     uint8_t status = SLCAN_SLAVE_STATUS_NONE;
 
     if(slcan_can_ext_fifo_full(&scs->rxcanfifo))      status |= SLCAN_SLAVE_STATUS_RX_FIFO_FULL;
-    if(slcan_can_ext_fifo_full(&scs->txcanfifo))      status |= SLCAN_SLAVE_STATUS_TX_FIFO_FULL;
+    if(slcan_can_fifo_full(&scs->txcanfifo))      status |= SLCAN_SLAVE_STATUS_TX_FIFO_FULL;
     if(scs->errors & SLCAN_SLAVE_ERROR_OVERRUN)          status |= SLCAN_SLAVE_STATUS_OVERRUN;
     if(scs->errors & SLCAN_SLAVE_ERROR_IO)               status |= SLCAN_SLAVE_STATUS_BUS_ERROR;
     if(scs->errors & SLCAN_SLAVE_ERROR_ARBITRATION_LOST) status |= SLCAN_SLAVE_STATUS_ARBITRATION_LOST;
@@ -391,7 +403,7 @@ static slcan_err_t slcan_slave_on_transmit(slcan_slave_t* scs, slcan_cmd_t* cmd)
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
     if(!(scs->flags & SLCAN_SLAVE_FLAG_OPENED)) return slcan_slave_send_answer_err(scs);
 
-    if(slcan_can_ext_fifo_put(&scs->txcanfifo, &cmd->transmit.can_msg, NULL, NULL) == 0){
+    if(slcan_can_fifo_put(&scs->txcanfifo, &cmd->transmit.can_msg, NULL) == 0){
         scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
         return slcan_slave_send_answer_err(scs);
     }
@@ -654,7 +666,7 @@ slcan_err_t slcan_slave_recv_can_msg(slcan_slave_t* scs, slcan_can_msg_t* can_ms
 
     if(can_msg == NULL) return E_SLCAN_NULL_POINTER;
 
-    if(slcan_can_ext_fifo_get(&scs->txcanfifo, can_msg, NULL, NULL) == 0){
+    if(slcan_can_fifo_get(&scs->txcanfifo, can_msg, NULL) == 0){
         return E_SLCAN_UNDERRUN;
     }
 

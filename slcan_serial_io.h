@@ -1,7 +1,16 @@
-#ifndef UTILS_SLCAN_SERIAL_IO_H_
-#define UTILS_SLCAN_SERIAL_IO_H_
+#ifndef SLCAN_SERIAL_IO_H_
+#define SLCAN_SERIAL_IO_H_
 
 #include <stddef.h>
+
+
+typedef void* slcan_serial_handle_t;
+
+#define SLCAN_IO_INVALID_HANDLE ((slcan_serial_handle_t)(long)(-1))
+
+
+#define SLCAN_IO_FAIL (-1)
+#define SLCAN_IO_SUCCESS (0)
 
 
 typedef enum _Slcan_Port_Parity {
@@ -31,36 +40,11 @@ typedef struct _Slcan_Port_Conf {
     slcan_port_stop_bits_t stop_bits;
 } slcan_port_conf_t;
 
+//! Перечисление флагов для poll (events & revents).
 typedef enum _Slcan_Poll {
     SLCAN_POLLIN = 1,
     SLCAN_POLLOUT = 4
 } slcan_poll_t;
 
 
-/*
- * -1 for error, 0 or non-negative for success.
- */
-typedef int (*slcan_serial_open_t)(const char* serial_port_name);
-typedef int (*slcan_serial_configure_t)(int serial_port, const slcan_port_conf_t* conf);
-typedef void (*slcan_serial_close_t)(int serial_port);
-typedef int (*slcan_serial_read_t)(int serial_port, void* data, size_t data_size);
-typedef int (*slcan_serial_write_t)(int serial_port, const void* data, size_t data_size);
-typedef int (*slcan_serial_flush_t)(int serial_port);
-typedef int (*slcan_serial_poll_t)(int serial_port, int events, int* revents, int timeout);
-typedef int (*slcan_serial_nbytes_t)(int serial_port, size_t* size);
-//typedef int (*_t)();
-
-
-typedef struct _Slcan_Serial_Io {
-    slcan_serial_open_t open;
-    slcan_serial_configure_t configure;
-    slcan_serial_close_t close;
-    slcan_serial_read_t read;
-    slcan_serial_write_t write;
-    slcan_serial_flush_t flush;
-    slcan_serial_poll_t poll;
-    slcan_serial_nbytes_t nbytes;
-} slcan_serial_io_t;
-
-
-#endif /* UTILS_SLCAN_SERIAL_IO_H_ */
+#endif /* SLCAN_SERIAL_IO_H_ */

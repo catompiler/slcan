@@ -7,7 +7,6 @@
 #include <stdlib.h>
 // slcan
 #include "slcan.h"
-#include "slcan_serial_io_cygwin.h"
 #include "slcan_master.h"
 #include "slcan_slave.h"
 
@@ -23,9 +22,9 @@
 #endif
 
 
-static int init_slcan_master(slcan_master_t* scm, slcan_t* sc, slcan_serial_io_t* sio, const char* serial_port_name)
+static int init_slcan_master(slcan_master_t* scm, slcan_t* sc, const char* serial_port_name)
 {
-    if(slcan_init(sc, sio) != 0){
+    if(slcan_init(sc) != 0){
         printf("Cann't init slcan!\n");
         return -1;
     }
@@ -54,9 +53,9 @@ static int init_slcan_master(slcan_master_t* scm, slcan_t* sc, slcan_serial_io_t
 }
 
 
-static int init_slcan_slave(slcan_slave_t* scs, slcan_t* sc, slcan_serial_io_t* sio, slcan_slave_callbacks_t* scb, const char* serial_port_name)
+static int init_slcan_slave(slcan_slave_t* scs, slcan_t* sc, slcan_slave_callbacks_t* scb, const char* serial_port_name)
 {
-    if(slcan_init(sc, sio) != 0){
+    if(slcan_init(sc) != 0){
         printf("Cann't init slcan!\n");
         return -1;
     }
@@ -173,9 +172,6 @@ int main(int argc, char* argv[])
     static slcan_master_t master;
     static slcan_slave_t slave;
 
-    slcan_serial_io_t sio;
-    slcan_serial_io_cygwin_init(&sio);
-
     scb.on_setup_can_std = on_setup_can_std;
     scb.on_setup_can_btr = on_setup_can_btr;
     scb.on_open = on_open;
@@ -188,13 +184,13 @@ int main(int argc, char* argv[])
 
     int res;
 
-    res = init_slcan_master(&master, &master_slcan, &sio, master_serial_port_name);
+    res = init_slcan_master(&master, &master_slcan, master_serial_port_name);
     if(res == -1){
         printf("Error init master slcan!\n");
         return -1;
     }
 
-    res = init_slcan_slave(&slave, &slave_slcan, &sio, &scb, slave_serial_port_name);
+    res = init_slcan_slave(&slave, &slave_slcan, &scb, slave_serial_port_name);
     if(res == -1){
         printf("Error init slave slcan!\n");
         slcan_deinit(&master_slcan);

@@ -20,7 +20,7 @@ slcan_err_t slcan_master_init(slcan_master_t* scm, slcan_t* sc)
     slcan_resp_out_fifo_init(&scm->respoutfifo);
 
     slcan_can_ext_fifo_init(&scm->rxcanfifo);
-    slcan_can_ext_fifo_init(&scm->txcanfifo);
+    slcan_can_fifo_init(&scm->txcanfifo);
 
     scm->tp_timeout.tv_sec = SLCAN_MASTER_TIMEOUT_S_DEFAULT;
     scm->tp_timeout.tv_nsec = SLCAN_MASTER_TIMEOUT_NS_DEFAULT;
@@ -347,7 +347,7 @@ static slcan_err_t slcan_master_send_existing_can_msgs(slcan_master_t* scm)
     slcan_can_msg_t can_msg;
     slcan_future_t* future;
 
-    while(slcan_can_ext_fifo_peek(&scm->txcanfifo, &can_msg, NULL, &future)){
+    while(slcan_can_fifo_peek(&scm->txcanfifo, &can_msg, &future)){
         err = slcan_master_send_can_msg_req(scm, &can_msg, future);
         if(err == E_SLCAN_OVERRUN || err == E_SLCAN_OVERFLOW){
             // try again later.
@@ -355,7 +355,7 @@ static slcan_err_t slcan_master_send_existing_can_msgs(slcan_master_t* scm)
         }
 
         // remove msg from fifo.
-        slcan_can_ext_fifo_data_readed(&scm->txcanfifo, 1);
+        slcan_can_fifo_data_readed(&scm->txcanfifo, 1);
 
         // if request fail.
         if(err != E_SLCAN_NO_ERROR){
@@ -738,11 +738,11 @@ slcan_err_t slcan_master_send_can_msg(slcan_master_t* scm, slcan_can_msg_t* can_
 
     if(can_msg == NULL) return E_SLCAN_NULL_POINTER;
 
-    bool empty = slcan_can_ext_fifo_empty(&scm->txcanfifo);
+    bool empty = slcan_can_fifo_empty(&scm->txcanfifo);
 
     slcan_master_future_start(future);
 
-    if(slcan_can_ext_fifo_put(&scm->txcanfifo, can_msg, NULL, future) == 0){
+    if(slcan_can_fifo_put(&scm->txcanfifo, can_msg, future) == 0){
         slcan_master_future_end(future, E_SLCAN_OVERRUN);
         return E_SLCAN_OVERRUN;
     }

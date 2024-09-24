@@ -4,6 +4,7 @@
 #include "slcan.h"
 #include "slcan_future.h"
 #include "slcan_resp_out_fifo.h"
+#include "slcan_can_fifo.h"
 #include "slcan_can_ext_fifo.h"
 #include "slcan_slave_status.h"
 #include "slcan_conf.h"
@@ -18,7 +19,7 @@ typedef struct _Slcan_Master {
     slcan_t* sc;
     slcan_resp_out_fifo_t respoutfifo;
     slcan_can_ext_fifo_t rxcanfifo;
-    slcan_can_ext_fifo_t txcanfifo;
+    slcan_can_fifo_t txcanfifo;
     struct timespec tp_timeout;
 } slcan_master_t;
 
