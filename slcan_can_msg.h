@@ -29,8 +29,8 @@ typedef struct _Slcan_Can_Msg {
 } slcan_can_msg_t;
 
 typedef struct _Slcan_Can_Msg_Extdata {
-    bool has_timestamp;
     uint16_t timestamp;
+    bool has_timestamp;
     bool autopoll_flag;
 } slcan_can_msg_extdata_t;
 
