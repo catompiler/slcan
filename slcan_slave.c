@@ -1,5 +1,6 @@
 #include "slcan_slave.h"
 #include "slcan_slave_status.h"
+#include "slcan_future.h"
 #include "slcan_conf.h"
 #include "slcan_port.h"
 #include <stdint.h>

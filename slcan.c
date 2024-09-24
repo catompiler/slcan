@@ -53,7 +53,7 @@ static slcan_err_t slcan_process_incoming_data(slcan_t* sc)
         // count of receiving bytes.
         res = slcan_serial_nbytes(sc->serial_port, &nbytes);
         // error.
-        if(res == -1){
+        if(res == SLCAN_IO_FAIL){
             return E_SLCAN_IO_ERROR;
         }
         // end of transfer.
@@ -67,7 +67,7 @@ static slcan_err_t slcan_process_incoming_data(slcan_t* sc)
                                 slcan_io_fifo_data_to_write(&sc->rxiofifo),
                                 nbytes);
         // error.
-        if(res == -1){
+        if(res == SLCAN_IO_FAIL){
             return E_SLCAN_IO_ERROR;
         }
         // readed data size.
@@ -98,7 +98,7 @@ static slcan_err_t slcan_process_outcoming_data(slcan_t* sc)
                                 slcan_io_fifo_data_to_read(&sc->txiofifo),
                                 nbytes);
         // error.
-        if(res == -1){
+        if(res == SLCAN_IO_FAIL){
             return E_SLCAN_IO_ERROR;
         }
         // readed data size.
@@ -233,24 +233,42 @@ slcan_err_t slcan_init(slcan_t* sc)
 
     slcan_get_default_port_config(&sc->port_conf);
 
-    sc->serial_port = SLCAN_IO_INVALID_HANDLE;
-
     slcan_io_fifo_init(&sc->txiofifo);
     slcan_io_fifo_init(&sc->rxiofifo);
     slcan_cmd_buf_init(&sc->txcmd);
     slcan_cmd_buf_init(&sc->rxcmd);
 
-    return 0;
+    sc->serial_port = SLCAN_IO_INVALID_HANDLE;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+void slcan_deinit(slcan_t* sc)
+{
+    assert(sc != NULL);
 }
 
 slcan_err_t slcan_open(slcan_t* sc, const char* serial_port_name)
 {
     assert(sc != NULL);
 
+    if(sc->serial_port != SLCAN_IO_INVALID_HANDLE){
+        slcan_close(sc);
+    }
+
     int res = slcan_serial_open(serial_port_name, &sc->serial_port);
-    if(res == -1) return E_SLCAN_IO_ERROR;
+    if(res == SLCAN_IO_FAIL) return E_SLCAN_IO_ERROR;
 
     return E_SLCAN_NO_ERROR;
+}
+
+void slcan_close(slcan_t* sc)
+{
+    assert(sc != NULL);
+
+    slcan_serial_close(sc->serial_port);
+
+    sc->serial_port = SLCAN_IO_INVALID_HANDLE;
 }
 
 slcan_err_t slcan_configure(slcan_t* sc, slcan_port_conf_t* port_conf)
@@ -260,20 +278,13 @@ slcan_err_t slcan_configure(slcan_t* sc, slcan_port_conf_t* port_conf)
     if(port_conf == NULL) port_conf = &sc->port_conf;
 
     int res = slcan_serial_configure(sc->serial_port, port_conf);
-    if(res == -1) return E_SLCAN_IO_ERROR;
+    if(res == SLCAN_IO_FAIL) return E_SLCAN_IO_ERROR;
 
     sc->port_conf.parity = port_conf->parity;
     sc->port_conf.stop_bits = port_conf->stop_bits;
     sc->port_conf.baud = port_conf->baud;
 
     return E_SLCAN_NO_ERROR;
-}
-
-void slcan_deinit(slcan_t* sc)
-{
-    assert(sc != NULL);
-
-    slcan_serial_close(sc->serial_port);
 }
 
 slcan_err_t slcan_poll(slcan_t* sc)
@@ -287,7 +298,7 @@ slcan_err_t slcan_poll(slcan_t* sc)
     // poll.
     int revents = 0;
     res = slcan_serial_poll(sc->serial_port, SLCAN_POLLIN | SLCAN_POLLOUT, &revents, 0);
-    if(res == -1) return E_SLCAN_IO_ERROR;
+    if(res == SLCAN_IO_FAIL) return E_SLCAN_IO_ERROR;
 
     // incoming data.
     if(revents & SLCAN_POLLIN){

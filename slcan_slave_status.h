@@ -2,6 +2,7 @@
 #define SLCAN_SLAVE_STATUS_H_
 
 
+//! Статус ведомого устройства SLCAN.
 typedef enum _Slcan_Slave_Status {
     SLCAN_SLAVE_STATUS_NONE             = 0,
     SLCAN_SLAVE_STATUS_RX_FIFO_FULL     = 0x1,

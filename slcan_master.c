@@ -2,6 +2,7 @@
 #include "slcan_resp_out.h"
 #include "slcan_port.h"
 #include "slcan_utils.h"
+#include "slcan_future.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>

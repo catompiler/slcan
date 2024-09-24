@@ -10,15 +10,22 @@
 #include "defs/defs.h"
 
 
-//#define SLCAN_TIMESTAMP_DEFAULT 1 //0
-//
-//#define SLCAN_AUTO_POLL_DEFAULT 1
 
+//! Флаг вывода на stdout передаваемых команд.
 #define SLCAN_DEBUG_OUTCOMING_CMDS 1
 
+//! Флаг вывода на stdout полученных команд.
 #define SLCAN_DEBUG_INCOMING_CMDS 1
 
 
+//! Инициализация SLCAN открывает последовательный порт.
+//#define SLCAN_INIT_OPENS_PORT 0
+
+//! Деинициализация SLCAN закрывает последовательный порт.
+//#define SLCAN_DEINIT_CLOSES_PORT 0
+
+
+//! Порог заполнения фифо отправляемыми сообщениями.
 #define SLCAN_TXIOFIFO_WATERMARK (SLCAN_IO_FIFO_SIZE / 4 * 3)
 
 
@@ -34,55 +41,88 @@
 #define SLCAN_ERR_BYTE '\007'
 
 
-
+//! Структура последовательного интерфейса для CAN.
 typedef struct _Slcan {
-    slcan_port_conf_t port_conf;
-    slcan_serial_handle_t serial_port;
-    slcan_io_fifo_t txiofifo;
-    slcan_io_fifo_t rxiofifo;
-    slcan_cmd_buf_t txcmd;
-    slcan_cmd_buf_t rxcmd;
-    //slcan_flags_t flags;
-    //slcan_errors_t errors;
+    slcan_port_conf_t port_conf; //!< Конфигурация порта.
+    slcan_serial_handle_t serial_port; //!< Идентификатор открытого порта.
+    slcan_io_fifo_t txiofifo; //!< Фифо байт данных для передачи.
+    slcan_io_fifo_t rxiofifo; //!< Фифо принятых байт данных.
+    slcan_cmd_buf_t txcmd; //!< Буфер для передаваемой команды.
+    slcan_cmd_buf_t rxcmd; //!< Буфер для принимаемой команды.
 } slcan_t;
 
 
+/**
+ * Получает конфигурацию порта по-умолчанию.
+ * @param conf Конфигурация порта.
+ * @return Код ошибки.
+ */
 EXTERN slcan_err_t slcan_get_default_port_config(slcan_port_conf_t* conf);
 
+/**
+ * Получает текущую конфигурацию порта.
+ * @param conf Конфигурация порта.
+ * @return Код ошибки.
+ */
 EXTERN slcan_err_t slcan_get_port_config(slcan_t* sc, slcan_port_conf_t* conf);
 
+
+/**
+ * Инициализирует последовательных интерфейс CAN.
+ * @param sc Интерфейс.
+ * @return Код ошибки.
+ */
 EXTERN slcan_err_t slcan_init(slcan_t* sc);
 
-EXTERN slcan_err_t slcan_open(slcan_t* sc, const char* serial_port_name);
-
-EXTERN slcan_err_t slcan_configure(slcan_t* sc, slcan_port_conf_t* port_conf);
-
+/**
+ * Деинициализирует последовательных интерфейс CAN.
+ * @param sc Интерфейс.
+ */
 EXTERN void slcan_deinit(slcan_t* sc);
 
+/**
+ * Открывает порт.
+ * @param sc Интерфейс.
+ * @param serial_port_name
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_open(slcan_t* sc, const char* serial_port_name);
+
+/**
+ * Закрывает порт.
+ * @param sc Интерфейс.
+ */
+EXTERN void slcan_close(slcan_t* sc);
+
+/**
+ * Настраивает порт.
+ * @param sc Интерфейс.
+ * @param port_conf Конфигурация порта.
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_configure(slcan_t* sc, slcan_port_conf_t* port_conf);
+
+/**
+ * Обрабатывает события ввода-вывода.
+ * @param sc Интерфейс.
+ * @return Код ошибки.
+ */
 EXTERN slcan_err_t slcan_poll(slcan_t* sc);
 
+/**
+ * Получает принятую команду.
+ * @param sc Интерфейс.
+ * @param cmd
+ * @return Код ошибки.
+ */
 EXTERN slcan_err_t slcan_get_cmd(slcan_t* sc, slcan_cmd_t* cmd);
 
+/**
+ * Отправляет команду.
+ * @param sc Интерфейс.
+ * @param cmd
+ * @return Код ошибки.
+ */
 EXTERN slcan_err_t slcan_put_cmd(slcan_t* sc, const slcan_cmd_t* cmd);
-
-//ALWAYS_INLINE static slcan_flags_t slcan_flags(slcan_t* sc)
-//{
-//    return sc->flags;
-//}
-//
-//ALWAYS_INLINE static void slcan_set_flags(slcan_t* sc, slcan_flags_t flags)
-//{
-//    sc->flags = flags;
-//}
-//
-//ALWAYS_INLINE static slcan_errors_t slcan_errors(slcan_t* sc)
-//{
-//    return sc->errors;
-//}
-//
-//ALWAYS_INLINE static void slcan_set_errors(slcan_t* sc, slcan_errors_t errors)
-//{
-//    sc->errors = errors;
-//}
 
 #endif /* SLCAN_H_ */

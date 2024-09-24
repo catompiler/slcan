@@ -5,14 +5,23 @@
 #include "defs/defs.h"
 
 
-
-ALWAYS_INLINE static uint8_t digit_num_to_hex(uint8_t digit)
+/**
+ * Преобразует шестнадцатиричное число в цифру.
+ * @param digit Число.
+ * @return Цифра.
+ */
+ALWAYS_INLINE static uint8_t digit_num_to_hex(uint8_t num)
 {
-    if(digit < 0xa) return digit + '0';
-    if(digit < 0x10) return digit - 0xa + 'A';
-    return digit;
+    if(num < 0xa) return num + '0';
+    if(num < 0x10) return num - 0xa + 'A';
+    return num;
 }
 
+/**
+ * Преобразует шестнадцатиричную цифру в число.
+ * @param digit Цифра.
+ * @return Число.
+ */
 ALWAYS_INLINE static uint8_t digit_hex_to_num(uint8_t digit)
 {
     if(digit >= 'A' && digit <= 'F') return digit - 'A' + 0xa;
@@ -21,7 +30,7 @@ ALWAYS_INLINE static uint8_t digit_hex_to_num(uint8_t digit)
     return digit;
 }
 
-
+//! Добавляет метку времени TPU к TPV с занесением результата в TPR.
 #define slcan_timespec_add(TPU, TPV, TPR)\
     do{\
         (TPR)->tv_sec  = (TPU)->tv_sec  + (TPV)->tv_sec;\
@@ -32,6 +41,7 @@ ALWAYS_INLINE static uint8_t digit_hex_to_num(uint8_t digit)
         }\
     }while(0)
 
+//! Вычитает метку времени TPV из TPU с занесением результата в TPR.
 #define slcan_timespec_sub(TPU, TPV, TPR)\
     do{\
         (TPR)->tv_sec  = (TPU)->tv_sec  - (TPV)->tv_sec;\
@@ -42,6 +52,7 @@ ALWAYS_INLINE static uint8_t digit_hex_to_num(uint8_t digit)
         }\
     while(0)
 
+//! Осуществляет операцию сравнения cmp меток времени TPU и TPV.
 #define slcan_timespec_cmp(TPU, TPV, cmp)\
         (((TPU)->tv_sec == (TPV)->tv_sec) ?\
                 ((TPU)->tv_nsec cmp (TPV)->tv_nsec) :\
