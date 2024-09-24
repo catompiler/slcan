@@ -16,9 +16,9 @@ int slcan_serial_open(const char* serial_port_name)
     return s;
 }
 
-int slcan_serial_configure(int serial_port, slcan_port_conf_t* conf)
+int slcan_serial_configure(int serial_port, const slcan_port_conf_t* conf)
 {
-    static int slcan_port_bauds_impl[] = {
+    static const int slcan_port_bauds_impl[] = {
         B230400,
         B115200,
         B57600,

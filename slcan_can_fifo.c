@@ -39,7 +39,7 @@ size_t slcan_can_fifo_get(slcan_can_fifo_t* fifo, slcan_can_msg_t* msg)
     return 0;
 }
 
-size_t slcan_can_fifo_peek(slcan_can_fifo_t* fifo, slcan_can_msg_t* msg)
+size_t slcan_can_fifo_peek(const slcan_can_fifo_t* fifo, slcan_can_msg_t* msg)
 {
     if(msg && fifo->count > 0){
         memcpy(msg, &fifo->buf[fifo->rptr], sizeof(slcan_can_msg_t));

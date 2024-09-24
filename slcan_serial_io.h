@@ -41,7 +41,7 @@ typedef enum _Slcan_Poll {
  * -1 for error, 0 or non-negative for success.
  */
 typedef int (*slcan_serial_open_t)(const char* serial_port_name);
-typedef int (*slcan_serial_configure_t)(int serial_port, slcan_port_conf_t* conf);
+typedef int (*slcan_serial_configure_t)(int serial_port, const slcan_port_conf_t* conf);
 typedef void (*slcan_serial_close_t)(int serial_port);
 typedef int (*slcan_serial_read_t)(int serial_port, void* data, size_t data_size);
 typedef int (*slcan_serial_write_t)(int serial_port, const void* data, size_t data_size);

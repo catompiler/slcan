@@ -30,17 +30,17 @@ ALWAYS_INLINE static void slcan_resp_out_fifo_reset(slcan_resp_out_fifo_t* fifo)
     fifo->count = 0;
 }
 
-ALWAYS_INLINE static size_t slcan_resp_out_fifo_avail(slcan_resp_out_fifo_t* fifo)
+ALWAYS_INLINE static size_t slcan_resp_out_fifo_avail(const slcan_resp_out_fifo_t* fifo)
 {
     return fifo->count;
 }
 
-ALWAYS_INLINE static size_t slcan_resp_out_fifo_remain(slcan_resp_out_fifo_t* fifo)
+ALWAYS_INLINE static size_t slcan_resp_out_fifo_remain(const slcan_resp_out_fifo_t* fifo)
 {
     return SLCAN_RESP_OUT_FIFO_SIZE - fifo->count;
 }
 
-ALWAYS_INLINE static bool slcan_resp_out_fifo_full(slcan_resp_out_fifo_t* fifo)
+ALWAYS_INLINE static bool slcan_resp_out_fifo_full(const slcan_resp_out_fifo_t* fifo)
 {
     return fifo->count == SLCAN_RESP_OUT_FIFO_SIZE;
 }
@@ -51,7 +51,7 @@ EXTERN void slcan_resp_out_fifo_unput(slcan_resp_out_fifo_t* fifo);
 
 EXTERN size_t slcan_resp_out_fifo_get(slcan_resp_out_fifo_t* fifo, slcan_resp_out_t* resp_out);
 
-EXTERN size_t slcan_resp_out_fifo_peek(slcan_resp_out_fifo_t* fifo, slcan_resp_out_t* resp_out);
+EXTERN size_t slcan_resp_out_fifo_peek(const slcan_resp_out_fifo_t* fifo, slcan_resp_out_t* resp_out);
 
 EXTERN void slcan_resp_out_fifo_data_readed(slcan_resp_out_fifo_t* fifo, size_t data_size);
 

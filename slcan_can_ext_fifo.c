@@ -60,12 +60,12 @@ size_t slcan_can_ext_fifo_get(slcan_can_ext_fifo_t* fifo, slcan_can_msg_t* msg, 
     return 0;
 }
 
-size_t slcan_can_ext_fifo_peek(slcan_can_ext_fifo_t* fifo, slcan_can_msg_t* msg, slcan_can_msg_extdata_t* extdata, slcan_future_t** future)
+size_t slcan_can_ext_fifo_peek(const slcan_can_ext_fifo_t* fifo, slcan_can_msg_t* msg, slcan_can_msg_extdata_t* extdata, slcan_future_t** future)
 {
     assert(fifo != NULL);
 
     if(msg && fifo->count > 0){
-        slcan_can_ext_fifo_data_t* data = &fifo->buf[fifo->rptr];
+        const slcan_can_ext_fifo_data_t* data = &fifo->buf[fifo->rptr];
 
         memcpy(msg, &data->can_msg, sizeof(slcan_can_msg_t));
         if(extdata) memcpy(extdata, &data->extdata, sizeof(slcan_can_msg_extdata_t));

@@ -34,7 +34,7 @@ typedef struct _Slcan_Can_Msg_Extdata {
     bool autopoll_flag;
 } slcan_can_msg_extdata_t;
 
-EXTERN bool slcan_can_msg_is_valid(slcan_can_msg_t* msg);
+EXTERN bool slcan_can_msg_is_valid(const slcan_can_msg_t* msg);
 
 EXTERN slcan_err_t slcan_can_msg_from_buf(slcan_can_msg_t* can_msg, slcan_can_msg_extdata_t* ed, const slcan_cmd_buf_t* cmd_buf);
 

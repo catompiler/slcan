@@ -30,17 +30,17 @@ ALWAYS_INLINE static void slcan_cmd_fifo_reset(slcan_cmd_fifo_t* fifo)
     fifo->count = 0;
 }
 
-ALWAYS_INLINE static size_t slcan_cmd_fifo_avail(slcan_cmd_fifo_t* fifo)
+ALWAYS_INLINE static size_t slcan_cmd_fifo_avail(const slcan_cmd_fifo_t* fifo)
 {
     return fifo->count;
 }
 
-ALWAYS_INLINE static size_t slcan_cmd_fifo_remain(slcan_cmd_fifo_t* fifo)
+ALWAYS_INLINE static size_t slcan_cmd_fifo_remain(const slcan_cmd_fifo_t* fifo)
 {
     return SLCAN_CMD_FIFO_SIZE - fifo->count;
 }
 
-ALWAYS_INLINE static bool slcan_cmd_fifo_full(slcan_cmd_fifo_t* fifo)
+ALWAYS_INLINE static bool slcan_cmd_fifo_full(const slcan_cmd_fifo_t* fifo)
 {
     return fifo->count == SLCAN_CMD_FIFO_SIZE;
 }
@@ -49,7 +49,7 @@ EXTERN size_t slcan_cmd_fifo_put(slcan_cmd_fifo_t* fifo, const slcan_cmd_t* cmd)
 
 EXTERN size_t slcan_cmd_fifo_get(slcan_cmd_fifo_t* fifo, slcan_cmd_t* cmd);
 
-EXTERN size_t slcan_cmd_fifo_peek(slcan_cmd_fifo_t* fifo, slcan_cmd_t* cmd);
+EXTERN size_t slcan_cmd_fifo_peek(const slcan_cmd_fifo_t* fifo, slcan_cmd_t* cmd);
 
 EXTERN void slcan_cmd_fifo_data_readed(slcan_cmd_fifo_t* fifo, size_t data_size);
 

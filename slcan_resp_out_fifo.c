@@ -51,7 +51,7 @@ size_t slcan_resp_out_fifo_get(slcan_resp_out_fifo_t* fifo, slcan_resp_out_t* re
     return 0;
 }
 
-size_t slcan_resp_out_fifo_peek(slcan_resp_out_fifo_t* fifo, slcan_resp_out_t* resp_out)
+size_t slcan_resp_out_fifo_peek(const slcan_resp_out_fifo_t* fifo, slcan_resp_out_t* resp_out)
 {
     if(resp_out && fifo->count > 0){
         memcpy(resp_out, &fifo->buf[fifo->rptr], sizeof(slcan_resp_out_t));

@@ -5,7 +5,7 @@
 #include <assert.h>
 
 
-bool slcan_can_msg_is_valid(slcan_can_msg_t* msg)
+bool slcan_can_msg_is_valid(const slcan_can_msg_t* msg)
 {
     if(msg == NULL) return false;
 

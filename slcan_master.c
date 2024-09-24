@@ -33,7 +33,7 @@ void slcan_master_deinit(slcan_master_t* scm)
     assert(scm != 0);
 }
 
-slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, struct timespec* tp_timeout)
+slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct timespec* tp_timeout)
 {
     assert(scm != NULL);
 

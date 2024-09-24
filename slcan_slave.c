@@ -391,9 +391,7 @@ static slcan_err_t slcan_slave_on_transmit(slcan_slave_t* scs, slcan_cmd_t* cmd)
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
     if(!(scs->flags & SLCAN_SLAVE_FLAG_OPENED)) return slcan_slave_send_answer_err(scs);
 
-    slcan_can_msg_t* can_msg = &cmd->transmit.can_msg;
-
-    if(slcan_can_ext_fifo_put(&scs->txcanfifo, can_msg, NULL, NULL) == 0){
+    if(slcan_can_ext_fifo_put(&scs->txcanfifo, &cmd->transmit.can_msg, NULL, NULL) == 0){
         scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
         return slcan_slave_send_answer_err(scs);
     }

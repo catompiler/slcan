@@ -39,7 +39,7 @@ size_t slcan_cmd_fifo_get(slcan_cmd_fifo_t* fifo, slcan_cmd_t* cmd)
     return 0;
 }
 
-size_t slcan_cmd_fifo_peek(slcan_cmd_fifo_t* fifo, slcan_cmd_t* cmd)
+size_t slcan_cmd_fifo_peek(const slcan_cmd_fifo_t* fifo, slcan_cmd_t* cmd)
 {
     if(cmd && fifo->count > 0){
         memcpy(cmd, &fifo->buf[fifo->rptr], sizeof(slcan_cmd_t));

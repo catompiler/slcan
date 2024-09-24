@@ -27,7 +27,7 @@ EXTERN slcan_err_t slcan_master_init(slcan_master_t* scm, slcan_t* sc);
 
 EXTERN void slcan_master_deinit(slcan_master_t* scm);
 
-EXTERN slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, struct timespec* tp_timeout);
+EXTERN slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct timespec* tp_timeout);
 
 EXTERN slcan_err_t slcan_master_poll(slcan_master_t* scm);
 
