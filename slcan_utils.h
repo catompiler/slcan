@@ -1,8 +1,42 @@
+/**
+ * @file slcan_utils.h
+ * Общие часто встречающиеся утилитарные функции и макросы.
+ */
+
 #ifndef SLCAN_UTILS_H_
 #define SLCAN_UTILS_H_
 
 #include <stdint.h>
-#include "defs/defs.h"
+#include "slcan_defs.h"
+
+
+/**
+ * Максимальное значение из двух.
+ */
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
+/**
+ * Минимальное значнеие из двух.
+ */
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+/**
+ * Абсолютное значение числа.
+ */
+#ifndef ABS
+#define ABS(a) ((a) < 0 ? -(a) : (a))
+#endif
+
+/**
+ * Значение в границах.
+ */
+#ifndef CLAMP
+#define CLAMP(v, min_v, max_v) (MIN(MAX((v), (min_v)), (max_v)))
+#endif
 
 
 /**

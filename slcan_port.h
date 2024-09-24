@@ -3,7 +3,7 @@
 
 
 #include <time.h>
-#include "defs/defs.h"
+#include "slcan_defs.h"
 #include "slcan_serial_io.h"
 
 

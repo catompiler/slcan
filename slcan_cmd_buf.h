@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "defs/defs.h"
-#include "utils/utils.h"
+#include "slcan_defs.h"
+#include "slcan_utils.h"
 #include "slcan_conf.h"
 
 

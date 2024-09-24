@@ -1,5 +1,5 @@
 #include "slcan_io_fifo.h"
-#include "utils/utils.h"
+#include "slcan_utils.h"
 #include <string.h>
 
 

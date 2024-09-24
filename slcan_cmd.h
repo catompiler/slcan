@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "defs/defs.h"
+#include "slcan_defs.h"
 #include "slcan_can_msg.h"
 #include "slcan_serial_io.h"
 #include "slcan_cmd_buf.h"

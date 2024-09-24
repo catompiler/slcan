@@ -1,5 +1,5 @@
 #include "slcan.h"
-#include "utils/utils.h"
+#include "slcan_utils.h"
 #include "slcan_port.h"
 #include <stdint.h>
 #include <stddef.h>

@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "defs/defs.h"
+#include "slcan_defs.h"
 #include "slcan_err.h"
 
 

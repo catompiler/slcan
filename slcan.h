@@ -7,7 +7,7 @@
 #include "slcan_cmd.h"
 #include "slcan_err.h"
 #include "slcan_port.h"
-#include "defs/defs.h"
+#include "slcan_defs.h"
 
 
 
