@@ -84,7 +84,7 @@ ALWAYS_INLINE static uint8_t digit_hex_to_num(uint8_t digit)
             (TPR)->tv_nsec += 1000000000;\
             (TPR)->tv_sec  -= 1;\
         }\
-    while(0)
+    }while(0)
 
 //! Осуществляет операцию сравнения cmp меток времени TPU и TPV.
 #define slcan_timespec_cmp(TPU, TPV, cmp)\
