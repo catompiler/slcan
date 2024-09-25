@@ -24,7 +24,7 @@ int slcan_serial_open(const char* serial_port_name, slcan_serial_handle_t* seria
 {
     if(serial_port == NULL) return SLCAN_IO_FAIL;
 
-    int s = open(serial_port_name, O_RDWR);
+    int s = open(serial_port_name, O_RDWR | O_NOCTTY);
     if(s < 0) return SLCAN_IO_FAIL;
 
     *serial_port = SERIAL_TO_HANDLE(s);
@@ -186,6 +186,9 @@ int slcan_serial_write(slcan_serial_handle_t serial_port, const void* data, size
 int slcan_serial_flush(slcan_serial_handle_t serial_port)
 {
     int res;
+
+    res = tcdrain(HANDLE_TO_SERIAL(serial_port));
+    if(res == SLCAN_IO_FAIL) return res;
 
     res = tcflush(HANDLE_TO_SERIAL(serial_port), TCIOFLUSH);
     if(res == SLCAN_IO_FAIL) return res;
