@@ -257,6 +257,8 @@ static slcan_err_t slcan_master_process_result(slcan_master_t* scm, slcan_cmd_t*
     case SLCAN_CMD_SET_AUTO_POLL:
     case SLCAN_CMD_SETUP_UART:
     case SLCAN_CMD_SET_TIMESTAMP:
+    case SLCAN_CMD_SET_ACCEPTANCE_MASK:
+    case SLCAN_CMD_SET_ACCEPTANCE_FILTER:
         return slcan_master_process_resp_ok_fail(scm, &resp_out, cmd);
     case SLCAN_CMD_TRANSMIT:
     case SLCAN_CMD_TRANSMIT_EXT:
@@ -719,6 +721,54 @@ slcan_err_t slcan_master_cmd_set_timestamp(slcan_master_t* scm, bool enable, slc
     cmd.type = SLCAN_CMD_SET_TIMESTAMP;
     cmd.mode = SLCAN_CMD_MODE_REQUEST;
     cmd.set_timestamp.value = enable;
+
+    resp_out.req_type = cmd.type;
+    resp_out.future = future;
+
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
+}
+
+slcan_err_t slcan_master_cmd_set_acceptance_mask(slcan_master_t* scm, uint32_t value, slcan_future_t* future)
+{
+    assert(scm != 0);
+
+    slcan_cmd_t cmd;
+    slcan_resp_out_t resp_out;
+
+    cmd.type = SLCAN_CMD_SET_ACCEPTANCE_MASK;
+    cmd.mode = SLCAN_CMD_MODE_REQUEST;
+    cmd.set_acceptance_mask.value = value;
+
+    resp_out.req_type = cmd.type;
+    resp_out.future = future;
+
+    slcan_master_future_start(future);
+
+    slcan_err_t err = slcan_master_send_request(scm, &cmd, &resp_out);
+    if(err != E_SLCAN_NO_ERROR){
+        slcan_master_future_end(future, err);
+    }
+
+    return err;
+}
+
+slcan_err_t slcan_master_cmd_set_acceptance_filter(slcan_master_t* scm, uint32_t value, slcan_future_t* future)
+{
+    assert(scm != 0);
+
+    slcan_cmd_t cmd;
+    slcan_resp_out_t resp_out;
+
+    cmd.type = SLCAN_CMD_SET_ACCEPTANCE_FILTER;
+    cmd.mode = SLCAN_CMD_MODE_REQUEST;
+    cmd.set_acceptance_filter.value = value;
 
     resp_out.req_type = cmd.type;
     resp_out.future = future;

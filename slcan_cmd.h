@@ -115,6 +115,16 @@ typedef struct _Slcan_Cmd_Set_Timestamp {
     uint8_t value; //!< Значения получения отметок времени.
 } slcan_cmd_set_timestamp_t;
 
+//! Тип команды установки маски фильтра.
+typedef struct _Slcan_Cmd_Set_Acceptance_Mask {
+    uint32_t value; //!< Значение маски.
+} slcan_cmd_set_acceptance_mask_t;
+
+//! Тип команды установки значения фильтра.
+typedef struct _Slcan_Cmd_Set_Acceptance_Filter {
+    uint32_t value; //!< Значение маски.
+} slcan_cmd_set_acceptance_filter_t;
+
 //! Неизвестная команда.
 typedef struct _Slcan_Cmd_Unknown {
     uint8_t cmd_byte; //!< Байт типа команды.
@@ -143,6 +153,8 @@ typedef enum _Slcan_Cmd_Req_Type {
     SLCAN_CMD_VERSION = 'V',
     SLCAN_CMD_SN = 'N',
     SLCAN_CMD_SET_TIMESTAMP = 'Z',
+    SLCAN_CMD_SET_ACCEPTANCE_MASK = 'm',
+    SLCAN_CMD_SET_ACCEPTANCE_FILTER = 'M',
 } slcan_cmd_req_type_t;
 
 //! Перечисление типов ответа.
@@ -191,6 +203,8 @@ typedef struct _Slcan_Cmd {
         slcan_cmd_sn_req_t sn_req;
         slcan_cmd_sn_resp_t sn_resp;
         slcan_cmd_set_timestamp_t set_timestamp;
+        slcan_cmd_set_acceptance_mask_t set_acceptance_mask;
+        slcan_cmd_set_acceptance_filter_t set_acceptance_filter;
     };
 } slcan_cmd_t;
 

@@ -120,6 +120,18 @@ static slcan_err_t on_setup_uart(slcan_port_baud_t baud)
     return E_SLCAN_NO_ERROR;
 }
 
+static slcan_err_t on_set_acceptance_mask(uint32_t value)
+{
+    printf("acceptance mask: 0x%08x\n", (unsigned int)value);
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t on_set_acceptance_filter(uint32_t value)
+{
+    printf("acceptance filter: 0x%08x\n", (unsigned int)value);
+    return E_SLCAN_NO_ERROR;
+}
+
 
 static void gen_can_msg(slcan_can_msg_t* msg)
 {
@@ -172,12 +184,15 @@ int main_master_slave_exchange(int argc, char* argv[])
     static slcan_master_t master;
     static slcan_slave_t slave;
 
+    memset(&scb, 0x0, sizeof(slcan_slave_callbacks_t));
     scb.on_setup_can_std = on_setup_can_std;
     scb.on_setup_can_btr = on_setup_can_btr;
     scb.on_open = on_open;
     scb.on_listen = on_listen;
     scb.on_close = on_close;
     scb.on_setup_uart = on_setup_uart;
+    scb.on_set_acceptance_mask = on_set_acceptance_mask;
+    scb.on_set_acceptance_filter = on_set_acceptance_filter;
 
     const char* master_serial_port_name = MASTER_TTY;
     const char* slave_serial_port_name = SLAVE_TTY;
@@ -234,6 +249,8 @@ int main_master_slave_exchange(int argc, char* argv[])
     slcan_master_cmd_setup_can_btr(&master, 0x12, 0x34, NULL);
     slcan_master_cmd_set_auto_poll(&master, false, NULL);
     slcan_master_cmd_set_timestamp(&master, true, NULL);
+    slcan_master_cmd_set_acceptance_mask(&master, 0x0f0f0f0f, NULL);
+    slcan_master_cmd_set_acceptance_filter(&master, 0xf0f0f0f0, NULL);
     slcan_master_cmd_open(&master, NULL);
     slcan_master_cmd_listen(&master, NULL);
     slcan_master_cmd_poll(&master, NULL);

@@ -169,6 +169,24 @@ EXTERN slcan_err_t slcan_master_cmd_read_sn(slcan_master_t* scm, uint16_t* sn, s
 EXTERN slcan_err_t slcan_master_cmd_set_timestamp(slcan_master_t* scm, bool enable, slcan_future_t* future);
 
 /**
+ * Отправляет запрос на установку маски фильтра,
+ * @param scm Ведущее устройство.
+ * @param value Маска.
+ * @param future Будущее.
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_master_cmd_set_acceptance_mask(slcan_master_t* scm, uint32_t value, slcan_future_t* future);
+
+/**
+ * Отправляет запрос на установку значения фильтра,
+ * @param scm Ведущее устройство.
+ * @param value Значение.
+ * @param future Будущее.
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_master_cmd_set_acceptance_filter(slcan_master_t* scm, uint32_t value, slcan_future_t* future);
+
+/**
  * Отправляет запрос на передачу сообщения CAN.
  * @param scm Ведущее устройство.
  * @param can_msg Сообщение CAN.

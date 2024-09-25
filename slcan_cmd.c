@@ -646,6 +646,106 @@ static slcan_err_t slcan_cmd_set_timestamp_to_buf(const slcan_cmd_t* cmd, slcan_
 }
 
 
+static slcan_err_t slcan_cmd_set_acceptance_mask_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf)
+{
+    size_t buf_data_size = slcan_cmd_buf_size(buf);
+    if(buf_data_size != 9 + 1 /* EOM */) return E_SLCAN_INVALID_SIZE;
+
+    const uint8_t* buf_data = slcan_cmd_buf_data_const(buf);
+    const uint8_t* cmd_data = &buf_data[1];
+
+    int i;
+
+    // check cmd data.
+    for(i = 0; i < 8; i ++){
+        if(!isxdigit(cmd_data[i])) return E_SLCAN_INVALID_DATA;
+    }
+
+    uint32_t value = ((digit_hex_to_num(cmd_data[0]) & 0x0f) << 0) |
+                      ((digit_hex_to_num(cmd_data[1]) & 0x0f) << 4) |
+                      ((digit_hex_to_num(cmd_data[2]) & 0x0f) << 8) |
+                      ((digit_hex_to_num(cmd_data[3]) & 0x0f) << 12) |
+                      ((digit_hex_to_num(cmd_data[4]) & 0x0f) << 16) |
+                      ((digit_hex_to_num(cmd_data[5]) & 0x0f) << 20) |
+                      ((digit_hex_to_num(cmd_data[6]) & 0x0f) << 24) |
+                      ((digit_hex_to_num(cmd_data[7]) & 0x0f) << 28);
+
+    cmd->type = SLCAN_CMD_SET_ACCEPTANCE_MASK;
+    cmd->mode = SLCAN_CMD_MODE_REQUEST;
+    cmd->set_acceptance_mask.value = value;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t slcan_cmd_set_acceptance_mask_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
+{
+    if(slcan_cmd_buf_put(buf, SLCAN_CMD_SET_ACCEPTANCE_MASK) == 0) return E_SLCAN_OVERFLOW;
+
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 4) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 8) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 12) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 16) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 20) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 24) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_mask.value >> 28) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+
+    if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+
+static slcan_err_t slcan_cmd_set_acceptance_filter_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf)
+{
+    size_t buf_data_size = slcan_cmd_buf_size(buf);
+    if(buf_data_size != 9 + 1 /* EOM */) return E_SLCAN_INVALID_SIZE;
+
+    const uint8_t* buf_data = slcan_cmd_buf_data_const(buf);
+    const uint8_t* cmd_data = &buf_data[1];
+
+    int i;
+
+    // check cmd data.
+    for(i = 0; i < 8; i ++){
+        if(!isxdigit(cmd_data[i])) return E_SLCAN_INVALID_DATA;
+    }
+
+    uint32_t value = ((digit_hex_to_num(cmd_data[0]) & 0x0f) << 0) |
+                      ((digit_hex_to_num(cmd_data[1]) & 0x0f) << 4) |
+                      ((digit_hex_to_num(cmd_data[2]) & 0x0f) << 8) |
+                      ((digit_hex_to_num(cmd_data[3]) & 0x0f) << 12) |
+                      ((digit_hex_to_num(cmd_data[4]) & 0x0f) << 16) |
+                      ((digit_hex_to_num(cmd_data[5]) & 0x0f) << 20) |
+                      ((digit_hex_to_num(cmd_data[6]) & 0x0f) << 24) |
+                      ((digit_hex_to_num(cmd_data[7]) & 0x0f) << 28);
+
+    cmd->type = SLCAN_CMD_SET_ACCEPTANCE_FILTER;
+    cmd->mode = SLCAN_CMD_MODE_REQUEST;
+    cmd->set_acceptance_filter.value = value;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t slcan_cmd_set_acceptance_filter_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
+{
+    if(slcan_cmd_buf_put(buf, SLCAN_CMD_SET_ACCEPTANCE_FILTER) == 0) return E_SLCAN_OVERFLOW;
+
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 0) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 4) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 8) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 12) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 16) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 20) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 24) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+    if(slcan_cmd_buf_put(buf, digit_num_to_hex((cmd->set_acceptance_filter.value >> 28) & 0x0f)) == 0) return E_SLCAN_OVERFLOW;
+
+    if(slcan_cmd_buf_put(buf, SLCAN_CMD_OK) == 0) return E_SLCAN_OVERFLOW;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+
 static slcan_err_t slcan_cmd_unknown_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf)
 {
     const uint8_t* buf_data = slcan_cmd_buf_data_const(buf);
@@ -730,6 +830,10 @@ slcan_err_t slcan_cmd_from_buf(slcan_cmd_t* cmd, const slcan_cmd_buf_t* buf)
         }else{
             return slcan_cmd_set_timestamp_from_buf(cmd, buf);
         }
+    case SLCAN_CMD_SET_ACCEPTANCE_MASK:
+        return slcan_cmd_set_acceptance_mask_from_buf(cmd, buf);
+    case SLCAN_CMD_SET_ACCEPTANCE_FILTER:
+        return slcan_cmd_set_acceptance_filter_from_buf(cmd, buf);
     }
 
     return E_SLCAN_NO_ERROR;
@@ -789,6 +893,10 @@ slcan_err_t slcan_cmd_to_buf(const slcan_cmd_t* cmd, slcan_cmd_buf_t* buf)
         }else{
             return slcan_cmd_ok_Z_to_buf(cmd, buf);
         }
+    case SLCAN_CMD_SET_ACCEPTANCE_MASK:
+        return slcan_cmd_set_acceptance_mask_to_buf(cmd, buf);
+    case SLCAN_CMD_SET_ACCEPTANCE_FILTER:
+        return slcan_cmd_set_acceptance_filter_to_buf(cmd, buf);
     }
 
     return E_SLCAN_NO_ERROR;

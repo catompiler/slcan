@@ -422,6 +422,58 @@ static slcan_err_t slcan_slave_on_transmit(slcan_slave_t* scs, slcan_cmd_t* cmd)
     return E_SLCAN_NO_ERROR;
 }
 
+static slcan_err_t slcan_slave_on_set_acceptance_mask(slcan_slave_t* scs, slcan_cmd_t* cmd)
+{
+    assert(scs != NULL);
+
+    if(cmd == NULL) return E_SLCAN_NULL_POINTER;
+    if(!scs->cb || !scs->cb->on_set_acceptance_mask) return slcan_slave_send_answer_err(scs);
+    if(!(scs->flags & SLCAN_SLAVE_FLAG_CONFIGURED)) return slcan_slave_send_answer_err(scs);
+    if(scs->flags & SLCAN_SLAVE_FLAG_OPENED) return slcan_slave_send_answer_err(scs);
+
+    uint32_t value = cmd->set_acceptance_mask.value;
+
+    slcan_err_t err;
+
+    err = scs->cb->on_set_acceptance_mask(value);
+
+    // fail
+    if(err != E_SLCAN_NO_ERROR){
+        return slcan_slave_send_answer_err(scs);
+    }
+
+    err = slcan_slave_send_answer_ok(scs);
+    if(err != E_SLCAN_NO_ERROR) return err;
+
+    return E_SLCAN_NO_ERROR;
+}
+
+static slcan_err_t slcan_slave_on_set_acceptance_filter(slcan_slave_t* scs, slcan_cmd_t* cmd)
+{
+    assert(scs != NULL);
+
+    if(cmd == NULL) return E_SLCAN_NULL_POINTER;
+    if(!scs->cb || !scs->cb->on_set_acceptance_filter) return slcan_slave_send_answer_err(scs);
+    if(!(scs->flags & SLCAN_SLAVE_FLAG_CONFIGURED)) return slcan_slave_send_answer_err(scs);
+    if(scs->flags & SLCAN_SLAVE_FLAG_OPENED) return slcan_slave_send_answer_err(scs);
+
+    uint32_t value = cmd->set_acceptance_filter.value;
+
+    slcan_err_t err;
+
+    err = scs->cb->on_set_acceptance_filter(value);
+
+    // fail
+    if(err != E_SLCAN_NO_ERROR){
+        return slcan_slave_send_answer_err(scs);
+    }
+
+    err = slcan_slave_send_answer_ok(scs);
+    if(err != E_SLCAN_NO_ERROR) return err;
+
+    return E_SLCAN_NO_ERROR;
+}
+
 static slcan_err_t slcan_slave_send_transmit_resp_cmd(slcan_slave_t* scs, slcan_cmd_t* resp_cmd)
 {
     assert(scs != NULL);
@@ -579,6 +631,10 @@ static slcan_err_t slcan_slave_dispatch(slcan_slave_t* scs, slcan_cmd_t* cmd)
         return slcan_slave_on_sn(scs, cmd);
     case SLCAN_CMD_SET_TIMESTAMP:
         return slcan_slave_on_set_timestamp(scs, cmd);
+    case SLCAN_CMD_SET_ACCEPTANCE_MASK:
+        return slcan_slave_on_set_acceptance_mask(scs, cmd);
+    case SLCAN_CMD_SET_ACCEPTANCE_FILTER:
+        return slcan_slave_on_set_acceptance_filter(scs, cmd);
     }
 
     return E_SLCAN_NO_ERROR;

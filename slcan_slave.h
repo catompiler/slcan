@@ -27,6 +27,10 @@ typedef slcan_err_t (*slcan_on_listen_t)(void);
 typedef slcan_err_t (*slcan_on_close_t)(void);
 //! Тип коллбэка настройки UART.
 typedef slcan_err_t (*slcan_on_setup_uart_t)(slcan_port_baud_t baud);
+//! Тип коллбэка установки маски фильтра CAN.
+typedef slcan_err_t (*slcan_on_set_acceptance_mask_t)(uint32_t value);
+//! Тип коллбэка установки значения фильтра CAN.
+typedef slcan_err_t (*slcan_on_set_acceptance_filter_t)(uint32_t value);
 
 
 //! Структура коллбэков.
@@ -37,6 +41,8 @@ typedef struct _Slcan_Slave_Callbacks {
     slcan_on_listen_t on_listen;
     slcan_on_close_t on_close;
     slcan_on_setup_uart_t on_setup_uart;
+    slcan_on_set_acceptance_mask_t on_set_acceptance_mask;
+    slcan_on_set_acceptance_filter_t on_set_acceptance_filter;
 } slcan_slave_callbacks_t;
 
 

@@ -107,6 +107,7 @@ int main_slave_loopback(int argc, char* argv[])
 
     static slcan_slave_t slave;
 
+    memset(&scb, 0x0, sizeof(slcan_slave_callbacks_t));
     scb.on_setup_can_std = on_setup_can_std;
     scb.on_setup_can_btr = on_setup_can_btr;
     scb.on_open = on_open;
