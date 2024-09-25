@@ -403,6 +403,7 @@ static slcan_err_t slcan_slave_on_transmit(slcan_slave_t* scs, slcan_cmd_t* cmd)
 
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
     if(!(scs->flags & SLCAN_SLAVE_FLAG_OPENED)) return slcan_slave_send_answer_err(scs);
+    if(scs->flags & SLCAN_SLAVE_FLAG_LISTEN_ONLY) return slcan_slave_send_answer_err(scs);
 
     if(slcan_can_fifo_put(&scs->txcanfifo, &cmd->transmit.can_msg, NULL) == 0){
         scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
@@ -617,6 +618,47 @@ slcan_err_t slcan_slave_poll(slcan_slave_t* scs)
         err = slcan_slave_send_existing_can_msgs(scs);
         if(err != E_SLCAN_NO_ERROR) return err;
     }
+
+    return E_SLCAN_NO_ERROR;
+}
+
+slcan_err_t slcan_slave_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
+{
+    assert(scs != 0);
+
+    struct timespec tp_end, tp_cur;
+
+    if(tp_timeout){
+        slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+        slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
+    }
+
+    slcan_err_t err;
+
+    for(;;){
+        if(slcan_can_ext_fifo_empty(&scs->rxcanfifo)) break;
+
+#if defined(SLCAN_SLAVE_POLL_SLCAN) && SLCAN_SLAVE_POLL_SLCAN == 1
+        err = slcan_poll_out(scs->sc);
+        if(err != E_SLCAN_NO_ERROR) return err;
+#endif
+
+        if(tp_timeout){
+            slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+
+            if(slcan_timespec_cmp(&tp_cur, &tp_end, >)){
+                return E_SLCAN_TIMEOUT;
+            }
+        }
+    }
+
+    if(tp_timeout){
+        slcan_timespec_sub(&tp_end, &tp_cur, &tp_end);
+        tp_timeout = &tp_end;
+    }
+
+    err = slcan_flush(scs->sc, tp_timeout);
+    if(err != E_SLCAN_NO_ERROR) return err;
 
     return E_SLCAN_NO_ERROR;
 }

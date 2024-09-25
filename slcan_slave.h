@@ -11,6 +11,9 @@
 // Тип структуры будущего.
 typedef struct _Slcan_Future slcan_future_t;
 
+// Структура отметки времени.
+struct timespec;
+
 
 //! Тип коллбэка настройки CAN на стандартную скорость.
 typedef slcan_err_t (*slcan_on_setup_can_std_t)(slcan_bit_rate_t bit_rate);
@@ -96,6 +99,15 @@ EXTERN void slcan_slave_deinit(slcan_slave_t* scs);
 EXTERN slcan_err_t slcan_slave_poll(slcan_slave_t* scs);
 
 /**
+ * Ждёт не более чем заданный тайм-аут
+ * отправки полученных фреймов.
+ * @param scs Ведомое устройство.
+ * @param tp_timeout Тайм-аут.
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_slave_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout);
+
+/**
  * Отправляет сообщение CAN.
  * @param scs Ведомое устройство.
  * @param can_msg Сообщение CAN.
@@ -120,6 +132,16 @@ EXTERN slcan_err_t slcan_slave_recv_can_msg(slcan_slave_t* scs, slcan_can_msg_t*
 ALWAYS_INLINE slcan_slave_flags_t slcan_slave_flags(slcan_slave_t* scs)
 {
     return scs->flags;
+}
+
+/**
+ * Устанавливает флаги ведомого устройства.
+ * @param scs Ведомое устройства.
+ * @param flags Флаги.
+ */
+ALWAYS_INLINE void slcan_slave_set_flags(slcan_slave_t* scs, slcan_slave_flags_t flags)
+{
+    scs->flags = flags;
 }
 
 /**
