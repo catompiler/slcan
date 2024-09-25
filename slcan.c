@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 
 
 
@@ -99,6 +100,7 @@ static slcan_err_t slcan_process_outcoming_data(slcan_t* sc)
                                 nbytes);
         // error.
         if(res == SLCAN_IO_FAIL){
+            if(errno == EAGAIN) return E_SLCAN_OVERFLOW;
             return E_SLCAN_IO_ERROR;
         }
         // readed data size.
