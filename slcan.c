@@ -316,6 +316,61 @@ slcan_err_t slcan_poll(slcan_t* sc)
     return E_SLCAN_NO_ERROR;
 }
 
+slcan_err_t slcan_poll_out(slcan_t* sc)
+{
+    assert(sc != NULL);
+
+    int res;
+    slcan_err_t err;
+
+
+    // poll.
+    int revents = 0;
+    res = slcan_serial_poll(sc->serial_port, SLCAN_POLLOUT, &revents, 0);
+    if(res == SLCAN_IO_FAIL) return E_SLCAN_IO_ERROR;
+
+    // outcoming data.
+    if(revents & SLCAN_POLLOUT){
+        err = slcan_process_outcoming_data(sc);
+        if(err != E_SLCAN_NO_ERROR) return err;
+    }
+
+
+    return E_SLCAN_NO_ERROR;
+}
+
+slcan_err_t slcan_flush(slcan_t* sc, struct timespec* tp_timeout)
+{
+    assert(sc != NULL);
+
+    struct timespec tp_end, tp_cur;
+
+    if(tp_timeout){
+        slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+        slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
+    }
+
+    slcan_err_t err;
+
+    while(!slcan_io_fifo_empty(&sc->txiofifo)){
+        err = slcan_poll_out(sc);
+        if(err != E_SLCAN_NO_ERROR) return err;
+
+        if(tp_timeout){
+            slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+
+            if(slcan_timespec_cmp(&tp_cur, &tp_end, >)){
+                return E_SLCAN_TIMEOUT;
+            }
+        }
+    }
+
+    int res = slcan_serial_flush(sc->serial_port);
+    if(res == SLCAN_IO_FAIL) return E_SLCAN_IO_ERROR;
+
+    return E_SLCAN_NO_ERROR;
+}
+
 slcan_err_t slcan_get_cmd(slcan_t* sc, slcan_cmd_t* cmd)
 {
     return slcan_rx_io_fifo_get_cmd(sc, cmd);

@@ -41,6 +41,10 @@
 #define SLCAN_ERR_BYTE '\007'
 
 
+// Структура отметки времени.
+struct timespec;
+
+
 //! Структура последовательного интерфейса для CAN.
 typedef struct _Slcan {
     slcan_port_conf_t port_conf; //!< Конфигурация порта.
@@ -108,6 +112,22 @@ EXTERN slcan_err_t slcan_configure(slcan_t* sc, slcan_port_conf_t* port_conf);
  * @return Код ошибки.
  */
 EXTERN slcan_err_t slcan_poll(slcan_t* sc);
+
+/**
+ * Обрабатывает события вывода.
+ * @param sc Интерфейс.
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_poll_out(slcan_t* sc);
+
+/**
+ * Ждёт не более чем заданный тайм-аут
+ * отправки данных.
+ * @param sc Интерфейс.
+ * @param tp_timeout Тайм-аут.
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_flush(slcan_t* sc, struct timespec* tp_timeout);
 
 /**
  * Получает принятую команду.
