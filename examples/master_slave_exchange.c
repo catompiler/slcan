@@ -157,7 +157,7 @@ static void gen_can_msg(slcan_can_msg_t* msg)
 }
 
 
-int main(int argc, char* argv[])
+int main_master_slave_exchange(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
@@ -274,8 +274,21 @@ int main(int argc, char* argv[])
 
     printf("Done.\n");
 
+    slcan_master_deinit(&master);
+    slcan_slave_deinit(&slave);
+
+    slcan_close(&master_slcan);
+    slcan_close(&slave_slcan);
+
     slcan_deinit(&master_slcan);
     slcan_deinit(&slave_slcan);
 
     return 0;
 }
+
+#if defined(EXAMPLE_MASTER_SLAVE_EXCHANGE) && EXAMPLE_MASTER_SLAVE_EXCHANGE == 1
+int main(int argc, char* argv[])
+{
+    return main_master_slave_exchange(argc, argv);
+}
+#endif
