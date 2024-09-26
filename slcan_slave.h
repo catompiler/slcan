@@ -108,6 +108,16 @@ ALWAYS_INLINE static slcan_t* slcan_slave_slcan(slcan_slave_t* scs)
 }
 
 /**
+ * Получает коллбэки.
+ * @param scs Ведомое устройство.
+ * @return Коллбэки.
+ */
+ALWAYS_INLINE static slcan_slave_callbacks_t* slcan_slave_callbacks(slcan_slave_t* scs)
+{
+    return scs->cb;
+}
+
+/**
  * Устанавливает коллбэки.
  * @param scs Ведомое устройство.
  * @param cb Коллбэки.
