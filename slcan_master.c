@@ -431,6 +431,33 @@ slcan_err_t slcan_master_poll(slcan_master_t* scm)
     return E_SLCAN_NO_ERROR;
 }
 
+static void slcan_master_finish_all_reqs(slcan_master_t* scm)
+{
+    slcan_resp_out_t resp_out;
+
+    while(slcan_resp_out_fifo_get(&scm->respoutfifo, &resp_out) != 0){
+        slcan_master_future_end(resp_out.future, E_SLCAN_CANCELED);
+    }
+}
+
+void slcan_master_reset(slcan_master_t* scm)
+{
+    assert(scm != NULL);
+
+    // reset fifos.
+    slcan_can_fifo_reset(&scm->txcanfifo);
+    slcan_can_ext_fifo_reset(&scm->rxcanfifo);
+
+    // finish all reqs.
+    slcan_master_finish_all_reqs(scm);
+    // reset req fifo.
+    // cleared in slcan_master_finish_all_reqs(...).
+    //slcan_resp_out_fifo_reset(&scm->respoutfifo);
+
+    // reset slcan.
+    slcan_reset(scm->sc);
+}
+
 slcan_err_t slcan_master_cmd_setup_can_std(slcan_master_t* scm, slcan_bit_rate_t bit_rate, slcan_future_t* future)
 {
     assert(scm != 0);

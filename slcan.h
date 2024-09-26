@@ -85,6 +85,12 @@ EXTERN slcan_err_t slcan_init(slcan_t* sc);
 EXTERN void slcan_deinit(slcan_t* sc);
 
 /**
+ * Сбрасывает последовательный интерфейс CAN.
+ * @param sc Интерфейс.
+ */
+EXTERN void slcan_reset(slcan_t* sc);
+
+/**
  * Открывает порт.
  * @param sc Интерфейс.
  * @param serial_port_name

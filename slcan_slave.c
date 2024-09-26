@@ -723,6 +723,20 @@ slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
     return E_SLCAN_NO_ERROR;
 }
 
+void slcan_slave_reset(slcan_slave_t* scs)
+{
+    assert(scs != NULL);
+
+    // reset fifos.
+    slcan_can_fifo_reset(&scs->txcanfifo);
+    slcan_can_ext_fifo_reset(&scs->rxcanfifo);
+    // reset errors.
+    scs->errors = SLCAN_SLAVE_ERROR_NONE;
+
+    // reset slcan.
+    slcan_reset(scs->sc);
+}
+
 static uint16_t slcan_slave_get_timestamp(void)
 {
     struct timespec ts;

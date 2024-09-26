@@ -250,6 +250,18 @@ void slcan_deinit(slcan_t* sc)
     assert(sc != NULL);
 }
 
+void slcan_reset(slcan_t* sc)
+{
+    assert(sc != NULL);
+
+    // reset fifos.
+    slcan_io_fifo_reset(&sc->txiofifo);
+    slcan_io_fifo_reset(&sc->rxiofifo);
+    // reset buffers.
+    slcan_cmd_buf_reset(&sc->txcmd);
+    slcan_cmd_buf_reset(&sc->rxcmd);
+}
+
 slcan_err_t slcan_open(slcan_t* sc, const char* serial_port_name)
 {
     assert(sc != NULL);

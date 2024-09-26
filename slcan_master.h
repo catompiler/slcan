@@ -51,7 +51,7 @@ ALWAYS_INLINE static slcan_t* slcan_master_slcan(slcan_master_t* scm)
 
 /**
  * Получает число принятых сообщений CAN.
- * @param scs Ведущее устройство.
+ * @param scm Ведущее устройство.
  * @return Число принятых сообщений CAN.
  */
 EXTERN size_t slcan_master_received_can_msgs_count(slcan_master_t* scm);
@@ -70,6 +70,12 @@ EXTERN slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct ti
  * @return Код ошибки.
  */
 EXTERN slcan_err_t slcan_master_poll(slcan_master_t* scm);
+
+/**
+ * Сбрасывает ведущее устройство.
+ * @param scm Ведущее устройство.
+ */
+EXTERN void slcan_master_reset(slcan_master_t* scm);
 
 /**
  * Отправляет запрос настройки CAN на стандартную скорость.

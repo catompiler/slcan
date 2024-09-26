@@ -141,6 +141,12 @@ EXTERN slcan_err_t slcan_slave_poll(slcan_slave_t* scs);
 EXTERN slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout);
 
 /**
+ * Сбрасывает ведомое устройство.
+ * @param scs Ведомое устройство.
+ */
+EXTERN void slcan_slave_reset(slcan_slave_t* scs);
+
+/**
  * Отправляет сообщение CAN.
  * @param scs Ведомое устройство.
  * @param can_msg Сообщение CAN.
