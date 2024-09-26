@@ -36,6 +36,8 @@ slcan_err_t slcan_slave_init(slcan_slave_t* scs, slcan_t* sc, slcan_slave_callba
 #endif
 #endif
 
+    scs->user_data = NULL;
+
     return E_SLCAN_NO_ERROR;
 }
 
@@ -137,7 +139,7 @@ static slcan_err_t slcan_slave_on_setup_can_std(slcan_slave_t* scs, slcan_cmd_t*
 
     slcan_err_t err;
 
-    err = scs->cb->on_setup_can_std(bit_rate);
+    err = scs->cb->on_setup_can_std(bit_rate, scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){
@@ -165,7 +167,7 @@ static slcan_err_t slcan_slave_on_setup_can_btr(slcan_slave_t* scs, slcan_cmd_t*
 
     slcan_err_t err;
 
-    err = scs->cb->on_setup_can_btr(btr0, btr1);
+    err = scs->cb->on_setup_can_btr(btr0, btr1, scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){
@@ -192,7 +194,7 @@ static slcan_err_t slcan_slave_on_open(slcan_slave_t* scs, slcan_cmd_t* cmd)
 
     slcan_err_t err;
 
-    err = scs->cb->on_open();
+    err = scs->cb->on_open(scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){
@@ -219,7 +221,7 @@ static slcan_err_t slcan_slave_on_listen(slcan_slave_t* scs, slcan_cmd_t* cmd)
 
     slcan_err_t err;
 
-    err = scs->cb->on_listen();
+    err = scs->cb->on_listen(scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){
@@ -245,7 +247,7 @@ static slcan_err_t slcan_slave_on_close(slcan_slave_t* scs, slcan_cmd_t* cmd)
 
     slcan_err_t err;
 
-    err = scs->cb->on_close();
+    err = scs->cb->on_close(scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){
@@ -357,7 +359,7 @@ static slcan_err_t slcan_slave_on_setup_uart(slcan_slave_t* scs, slcan_cmd_t* cm
 
     slcan_err_t err;
 
-    err = scs->cb->on_setup_uart(baud);
+    err = scs->cb->on_setup_uart(baud, scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){
@@ -439,7 +441,7 @@ static slcan_err_t slcan_slave_on_set_acceptance_mask(slcan_slave_t* scs, slcan_
 
     slcan_err_t err;
 
-    err = scs->cb->on_set_acceptance_mask(value);
+    err = scs->cb->on_set_acceptance_mask(value, scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){
@@ -465,7 +467,7 @@ static slcan_err_t slcan_slave_on_set_acceptance_filter(slcan_slave_t* scs, slca
 
     slcan_err_t err;
 
-    err = scs->cb->on_set_acceptance_filter(value);
+    err = scs->cb->on_set_acceptance_filter(value, scs->user_data);
 
     // fail
     if(err != E_SLCAN_NO_ERROR){

@@ -84,49 +84,49 @@ static int init_slcan_slave(slcan_slave_t* scs, slcan_t* sc, slcan_slave_callbac
 }
 
 
-static slcan_err_t on_setup_can_std(slcan_bit_rate_t bit_rate)
+static slcan_err_t on_setup_can_std(slcan_bit_rate_t bit_rate, void* user_data)
 {
     printf("setup can std: 0x%02x\n", (int)bit_rate);
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t on_setup_can_btr(uint8_t btr0, uint8_t btr1)
+static slcan_err_t on_setup_can_btr(uint8_t btr0, uint8_t btr1, void* user_data)
 {
     printf("setup can btr: 0x%x 0x%02x\n", (int)btr0, (int)btr1);
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t on_open(void)
+static slcan_err_t on_open(void* user_data)
 {
     printf("open can\n");
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t on_listen(void)
+static slcan_err_t on_listen(void* user_data)
 {
     printf("listen can\n");
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t on_close(void)
+static slcan_err_t on_close(void* user_data)
 {
     printf("close can\n");
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t on_setup_uart(slcan_port_baud_t baud)
+static slcan_err_t on_setup_uart(slcan_port_baud_t baud, void* user_data)
 {
     printf("setup uart: 0x%02x\n", (int)baud);
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t on_set_acceptance_mask(uint32_t value)
+static slcan_err_t on_set_acceptance_mask(uint32_t value, void* user_data)
 {
     printf("acceptance mask: 0x%08x\n", (unsigned int)value);
     return E_SLCAN_NO_ERROR;
 }
 
-static slcan_err_t on_set_acceptance_filter(uint32_t value)
+static slcan_err_t on_set_acceptance_filter(uint32_t value, void* user_data)
 {
     printf("acceptance filter: 0x%08x\n", (unsigned int)value);
     return E_SLCAN_NO_ERROR;

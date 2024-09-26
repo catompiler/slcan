@@ -16,21 +16,21 @@ struct timespec;
 
 
 //! Тип коллбэка настройки CAN на стандартную скорость.
-typedef slcan_err_t (*slcan_on_setup_can_std_t)(slcan_bit_rate_t bit_rate);
+typedef slcan_err_t (*slcan_on_setup_can_std_t)(slcan_bit_rate_t bit_rate, void* user_data);
 //! Тип коллбэка настройки CAN а нестандартную скорость.
-typedef slcan_err_t (*slcan_on_setup_can_btr_t)(uint8_t btr0, uint8_t btr1);
+typedef slcan_err_t (*slcan_on_setup_can_btr_t)(uint8_t btr0, uint8_t btr1, void* user_data);
 //! Тип коллбэка открытия CAN.
-typedef slcan_err_t (*slcan_on_open_t)(void);
+typedef slcan_err_t (*slcan_on_open_t)(void* user_data);
 //! Тип коллбэка открытия CAN на прослушку.
-typedef slcan_err_t (*slcan_on_listen_t)(void);
+typedef slcan_err_t (*slcan_on_listen_t)(void* user_data);
 //! Тип коллбэка закрытия CAN.
-typedef slcan_err_t (*slcan_on_close_t)(void);
+typedef slcan_err_t (*slcan_on_close_t)(void* user_data);
 //! Тип коллбэка настройки UART.
-typedef slcan_err_t (*slcan_on_setup_uart_t)(slcan_port_baud_t baud);
+typedef slcan_err_t (*slcan_on_setup_uart_t)(slcan_port_baud_t baud, void* user_data);
 //! Тип коллбэка установки маски фильтра CAN.
-typedef slcan_err_t (*slcan_on_set_acceptance_mask_t)(uint32_t value);
+typedef slcan_err_t (*slcan_on_set_acceptance_mask_t)(uint32_t value, void* user_data);
 //! Тип коллбэка установки значения фильтра CAN.
-typedef slcan_err_t (*slcan_on_set_acceptance_filter_t)(uint32_t value);
+typedef slcan_err_t (*slcan_on_set_acceptance_filter_t)(uint32_t value, void* user_data);
 
 
 //! Структура коллбэков.
@@ -80,6 +80,7 @@ typedef struct _Slcan_Slave {
     slcan_can_fifo_t txcanfifo; //!< Фифо передаваемых сообщений CAN.
     slcan_slave_flags_t flags; //!< Флаги.
     slcan_slave_errors_t errors; //!< Ошибки.
+    void* user_data; //!< Данные пользователя.
 } slcan_slave_t;
 
 /**
@@ -211,6 +212,26 @@ ALWAYS_INLINE slcan_slave_errors_t slcan_slave_errors(slcan_slave_t* scs)
 ALWAYS_INLINE void slcan_slave_set_errors(slcan_slave_t* scs, slcan_slave_errors_t errors)
 {
     scs->errors = errors;
+}
+
+/**
+ * Получает ошибки ведомого устройства.
+ * @param scs Ведомое устройство.
+ * @return Ошибки ведомого устройства.
+ */
+ALWAYS_INLINE void* slcan_slave_user_data(slcan_slave_t* scs)
+{
+    return scs->user_data;
+}
+
+/**
+ * Устанавливает ошибки ведомого устройства.
+ * @param scs Ведомое устройства.
+ * @param errors Ошибки.
+ */
+ALWAYS_INLINE void slcan_slave_set_user_data(slcan_slave_t* scs, void* user_data)
+{
+    scs->user_data = user_data;
 }
 
 #endif /* SLCAN_SLAVE_H_ */
