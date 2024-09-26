@@ -138,7 +138,7 @@ EXTERN slcan_err_t slcan_slave_poll(slcan_slave_t* scs);
  * @param tp_timeout Тайм-аут.
  * @return Код ошибки.
  */
-EXTERN slcan_err_t slcan_slave_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout);
+EXTERN slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout);
 
 /**
  * Отправляет сообщение CAN.

@@ -682,7 +682,7 @@ slcan_err_t slcan_slave_poll(slcan_slave_t* scs)
     return E_SLCAN_NO_ERROR;
 }
 
-slcan_err_t slcan_slave_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
+slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
 {
     assert(scs != 0);
 

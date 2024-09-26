@@ -182,7 +182,7 @@ int main_slave_recv_rand(int argc, char* argv[])
     }
 
     struct timespec tp_timeout = {1, 0};
-    slcan_err_t err = slcan_slave_slave_flush(&slave, &tp_timeout);
+    slcan_err_t err = slcan_slave_flush(&slave, &tp_timeout);
     if(err != E_SLCAN_NO_ERROR) printf("slcan flush err: %d\n", (int)err);
 
     printf("Done.\n");
