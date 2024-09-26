@@ -98,6 +98,16 @@ EXTERN slcan_err_t slcan_slave_init(slcan_slave_t* scs, slcan_t* sc, slcan_slave
 EXTERN void slcan_slave_deinit(slcan_slave_t* scs);
 
 /**
+ * Получает последовательный интерфейс.
+ * @param scs Ведомое устройство.
+ * @return Последовательный интерфейс.
+ */
+ALWAYS_INLINE static slcan_t* slcan_slave_slcan(slcan_slave_t* scs)
+{
+    return scs->sc;
+}
+
+/**
  * Обрабатывает события ведомого устройство.
  * @param scs Ведомое устройство.
  * @return Код ошибки.

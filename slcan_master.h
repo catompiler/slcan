@@ -40,6 +40,16 @@ EXTERN slcan_err_t slcan_master_init(slcan_master_t* scm, slcan_t* sc);
 EXTERN void slcan_master_deinit(slcan_master_t* scm);
 
 /**
+ * Получает последовательный интерфейс.
+ * @param scm Ведущее устройство.
+ * @return Последовательный интерфейс.
+ */
+ALWAYS_INLINE static slcan_t* slcan_master_slcan(slcan_master_t* scm)
+{
+    return scm->sc;
+}
+
+/**
  * Устанавливает тайм-аут запросов.
  * @param scm Ведущее устройство.
  * @param tp_timeout Тайм-аут.
