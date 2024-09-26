@@ -48,7 +48,16 @@ void slcan_slave_deinit(slcan_slave_t* scs)
 
 size_t slcan_slave_received_can_msgs_count(slcan_slave_t* scs)
 {
+    assert(scs != NULL);
+
     return slcan_can_ext_fifo_avail(&scs->rxcanfifo);
+}
+
+size_t slcan_slave_send_can_msgs_avail(slcan_slave_t* scs)
+{
+    assert(scs != NULL);
+
+    return slcan_can_fifo_remain(&scs->txcanfifo);
 }
 
 ALWAYS_INLINE static void slcan_slave_future_start(slcan_future_t* future)

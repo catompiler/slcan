@@ -57,6 +57,13 @@ ALWAYS_INLINE static slcan_t* slcan_master_slcan(slcan_master_t* scm)
 EXTERN size_t slcan_master_received_can_msgs_count(slcan_master_t* scm);
 
 /**
+ * Получает число свободных мест для передачи сообщений CAN.
+ * @param scm Ведущее устройство.
+ * @return Число свободных мест для передачи сообщений CAN.
+ */
+EXTERN size_t slcan_master_send_can_msgs_avail(slcan_master_t* scm);
+
+/**
  * Устанавливает тайм-аут запросов.
  * @param scm Ведущее устройство.
  * @param tp_timeout Тайм-аут.

@@ -36,7 +36,16 @@ void slcan_master_deinit(slcan_master_t* scm)
 
 size_t slcan_master_received_can_msgs_count(slcan_master_t* scm)
 {
+    assert(scm != 0);
+
     return slcan_can_ext_fifo_avail(&scm->rxcanfifo);
+}
+
+size_t slcan_master_send_can_msgs_avail(slcan_master_t* scm)
+{
+    assert(scm != 0);
+
+    return slcan_can_fifo_remain(&scm->txcanfifo);
 }
 
 slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct timespec* tp_timeout)

@@ -136,6 +136,13 @@ ALWAYS_INLINE static void slcan_slave_set_callbacks(slcan_slave_t* scs, slcan_sl
 EXTERN size_t slcan_slave_received_can_msgs_count(slcan_slave_t* scs);
 
 /**
+ * Получает число свободных мест для передачи сообщений CAN.
+ * @param scs Ведомое устройство.
+ * @return Число свободных мест для передачи сообщений CAN.
+ */
+EXTERN size_t slcan_slave_send_can_msgs_avail(slcan_slave_t* scs);
+
+/**
  * Обрабатывает события ведомого устройство.
  * @param scs Ведомое устройство.
  * @return Код ошибки.
