@@ -14,7 +14,6 @@ slcan_err_t slcan_slave_init(slcan_slave_t* scs, slcan_t* sc, slcan_slave_callba
     assert(scs != NULL);
 
     if(sc == NULL) return E_SLCAN_NULL_POINTER;
-    if(cb == NULL) return E_SLCAN_NULL_POINTER;
 
     scs->sc = sc;
     scs->cb = cb;
@@ -43,6 +42,11 @@ slcan_err_t slcan_slave_init(slcan_slave_t* scs, slcan_t* sc, slcan_slave_callba
 void slcan_slave_deinit(slcan_slave_t* scs)
 {
     assert(scs != NULL);
+}
+
+size_t slcan_slave_received_can_msgs_count(slcan_slave_t* scs)
+{
+    return slcan_can_ext_fifo_avail(&scs->rxcanfifo);
 }
 
 ALWAYS_INLINE static void slcan_slave_future_start(slcan_future_t* future)

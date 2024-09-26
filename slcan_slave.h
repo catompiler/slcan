@@ -108,6 +108,23 @@ ALWAYS_INLINE static slcan_t* slcan_slave_slcan(slcan_slave_t* scs)
 }
 
 /**
+ * Устанавливает коллбэки.
+ * @param scs Ведомое устройство.
+ * @param cb Коллбэки.
+ */
+ALWAYS_INLINE static void slcan_slave_set_callbacks(slcan_slave_t* scs, slcan_slave_callbacks_t* cb)
+{
+    scs->cb = cb;
+}
+
+/**
+ * Получает число принятых сообщений CAN.
+ * @param scs Ведомое устройство.
+ * @return Число принятых сообщений CAN.
+ */
+EXTERN size_t slcan_slave_received_can_msgs_count(slcan_slave_t* scs);
+
+/**
  * Обрабатывает события ведомого устройство.
  * @param scs Ведомое устройство.
  * @return Код ошибки.

@@ -50,6 +50,13 @@ ALWAYS_INLINE static slcan_t* slcan_master_slcan(slcan_master_t* scm)
 }
 
 /**
+ * Получает число принятых сообщений CAN.
+ * @param scs Ведущее устройство.
+ * @return Число принятых сообщений CAN.
+ */
+EXTERN size_t slcan_master_received_can_msgs_count(slcan_master_t* scm);
+
+/**
  * Устанавливает тайм-аут запросов.
  * @param scm Ведущее устройство.
  * @param tp_timeout Тайм-аут.
