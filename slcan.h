@@ -8,14 +8,7 @@
 #include "slcan_err.h"
 #include "slcan_port.h"
 #include "slcan_defs.h"
-
-
-
-//! Флаг вывода на stdout передаваемых команд.
-#define SLCAN_DEBUG_OUTCOMING_CMDS 1
-
-//! Флаг вывода на stdout полученных команд.
-#define SLCAN_DEBUG_INCOMING_CMDS 1
+#include "slcan_conf.h"
 
 
 //! Инициализация SLCAN открывает последовательный порт.

@@ -41,4 +41,11 @@
 #define SLCAN_SLAVE_POLL_SLCAN 1
 
 
+//! Флаг вывода на stdout передаваемых команд.
+#define SLCAN_DEBUG_OUTCOMING_CMDS 1
+
+//! Флаг вывода на stdout полученных команд.
+#define SLCAN_DEBUG_INCOMING_CMDS 1
+
+
 #endif /* SLCAN_CONF_H_ */
