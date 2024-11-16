@@ -79,6 +79,15 @@ EXTERN slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct ti
 EXTERN slcan_err_t slcan_master_poll(slcan_master_t* scm);
 
 /**
+ * Ждёт не более чем заданный тайм-аут
+ * завершения имеющихся запросов.
+ * @param scm Ведущее устройство.
+ * @param tp_timeout Тайм-аут.
+ * @return Код ошибки.
+ */
+EXTERN slcan_err_t slcan_master_flush(slcan_master_t* scm, struct timespec* tp_timeout);
+
+/**
  * Сбрасывает ведущее устройство.
  * @param scm Ведущее устройство.
  */

@@ -48,7 +48,7 @@ static slcan_err_t slcan_can_msg_from_buf_t(slcan_can_msg_t* can_msg, slcan_can_
     const uint8_t* buf_data = slcan_cmd_buf_data_const(buf);
     const uint8_t* cmd_data = &buf_data[1];
 
-    int i;
+    size_t i;
 
     // check id.
     for(i = 0; i < 3; i ++){
@@ -144,7 +144,7 @@ static slcan_err_t slcan_can_msg_from_buf_T(slcan_can_msg_t* can_msg, slcan_can_
     const uint8_t* buf_data = slcan_cmd_buf_data_const(buf);
     const uint8_t* cmd_data = &buf_data[1];
 
-    int i;
+    size_t i;
 
     // check id.
     for(i = 0; i < 3; i ++){

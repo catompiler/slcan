@@ -9,7 +9,7 @@
 
 
 //! Преобразует значение к результату будущего.
-#define SLCAN_FUTURE_RESULT(RES) ((void*)(long)(RES))
+#define SLCAN_FUTURE_RESULT(RES) ((void*)(ptrdiff_t)(RES))
 
 //! Преобразует результат будущего в прочие типы.
 #define SLCAN_FUTURE_RESULT_CAST(T, RES) ((T)(RES))
@@ -18,9 +18,9 @@
 //! Преобразует результат будущего в int.
 #define SLCAN_FUTURE_RESULT_INT(RES) ((int)SLCAN_FUTURE_RESULT_CAST_LONG(RES))
 //! Преобразует результат будущего в unsigned int.
-#define SLCAN_FUTURE_RESULT_UINT(RES) ((unsigned int)SLCAN_FUTURE_RESULT_CAST_LONG(RES))
+#define SLCAN_FUTURE_RESULT_UINT(RES) ((unsigned int)SLCAN_FUTURE_RESULT_CAST_ULONG(RES))
 //! Преобразует результат будущего в slcan_err_t.
-#define SLCAN_FUTURE_RESULT_ERR(RES) ((slcan_err_t)SLCAN_FUTURE_RESULT_CAST_LONG(RES))
+#define SLCAN_FUTURE_RESULT_ERR(RES) ((slcan_err_t)SLCAN_FUTURE_RESULT_CAST(ptrdiff_t, RES))
 
 
 /**

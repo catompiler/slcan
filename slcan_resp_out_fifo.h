@@ -45,6 +45,11 @@ ALWAYS_INLINE static bool slcan_resp_out_fifo_full(const slcan_resp_out_fifo_t* 
     return fifo->count == SLCAN_RESP_OUT_FIFO_SIZE;
 }
 
+ALWAYS_INLINE static bool slcan_resp_out_fifo_empty(const slcan_resp_out_fifo_t* fifo)
+{
+    return fifo->count == 0;
+}
+
 EXTERN size_t slcan_resp_out_fifo_put(slcan_resp_out_fifo_t* fifo, const slcan_resp_out_t* resp_out);
 
 EXTERN void slcan_resp_out_fifo_unput(slcan_resp_out_fifo_t* fifo);
