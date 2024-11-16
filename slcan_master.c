@@ -306,8 +306,11 @@ static slcan_err_t slcan_master_send_request(slcan_master_t* scm, slcan_cmd_t* c
 {
     assert(scm != 0);
 
+    if(scm->sc == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
     if(resp_out == NULL) return E_SLCAN_NULL_POINTER;
+
+    if(!slcan_opened(scm->sc)) return E_SLCAN_STATE;
 
     slcan_err_t err;
 
@@ -833,6 +836,11 @@ slcan_err_t slcan_master_send_can_msg(slcan_master_t* scm, slcan_can_msg_t* can_
     bool empty = slcan_can_fifo_empty(&scm->txcanfifo);
 
     slcan_master_future_start(future);
+
+    if(!slcan_opened(scm->sc)){
+        slcan_master_future_end(future, E_SLCAN_STATE);
+        return E_SLCAN_STATE;
+    }
 
     if(slcan_can_fifo_put(&scm->txcanfifo, can_msg, future) == 0){
         slcan_master_future_end(future, E_SLCAN_OVERRUN);

@@ -22,6 +22,7 @@ enum _Slcan_Errors {
     E_SLCAN_EXEC_FAIL     = 12,
     E_SLCAN_TIMEOUT       = 13,
     E_SLCAN_CANCELED      = 14,
+    E_SLCAN_STATE         = 15,
     //E_SLCAN_,
 };
 

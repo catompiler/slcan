@@ -78,6 +78,12 @@ EXTERN slcan_err_t slcan_init(slcan_t* sc);
 EXTERN void slcan_deinit(slcan_t* sc);
 
 /**
+ * Получает флаг открытого соединения.
+ * @return Флаг открытого соединения.
+ */
+EXTERN bool slcan_opened(slcan_t* sc);
+
+/**
  * Сбрасывает последовательный интерфейс CAN.
  * @param sc Интерфейс.
  */

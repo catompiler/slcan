@@ -81,6 +81,8 @@ static slcan_err_t slcan_slave_send_answer(slcan_slave_t* scs, slcan_cmd_t* cmd)
     if(scs->sc == NULL) return E_SLCAN_NULL_POINTER;
     if(cmd == NULL) return E_SLCAN_NULL_POINTER;
 
+    if(!slcan_opened(scs->sc)) return E_SLCAN_STATE;
+
     slcan_err_t err;
 
     err = slcan_put_cmd(scs->sc, cmd);
@@ -774,6 +776,11 @@ slcan_err_t slcan_slave_send_can_msg(slcan_slave_t* scs, slcan_can_msg_t* can_ms
     extdata.timestamp = slcan_slave_get_timestamp();
 
     slcan_slave_future_start(future);
+
+    if(!slcan_opened(scs->sc)){
+        slcan_slave_future_end(future, E_SLCAN_STATE);
+        return E_SLCAN_STATE;
+    }
 
     if(slcan_can_ext_fifo_put(&scs->rxcanfifo, can_msg, &extdata, future) == 0){
         slcan_slave_future_end(future, E_SLCAN_OVERRUN);

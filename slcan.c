@@ -250,6 +250,13 @@ void slcan_deinit(slcan_t* sc)
     assert(sc != NULL);
 }
 
+bool slcan_opened(slcan_t* sc)
+{
+    assert(sc != NULL);
+
+    return sc->serial_port != SLCAN_IO_INVALID_HANDLE;
+}
+
 void slcan_reset(slcan_t* sc)
 {
     assert(sc != NULL);
@@ -356,6 +363,8 @@ slcan_err_t slcan_poll_out(slcan_t* sc)
 slcan_err_t slcan_flush(slcan_t* sc, struct timespec* tp_timeout)
 {
     assert(sc != NULL);
+
+    if(!slcan_opened(sc)) return E_SLCAN_STATE;
 
     struct timespec tp_end, tp_cur;
 
