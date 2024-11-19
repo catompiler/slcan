@@ -36,6 +36,13 @@ slcan_err_t slcan_get_port_config(slcan_t* sc, slcan_port_conf_t* conf)
     return E_SLCAN_NO_ERROR;
 }
 
+slcan_serial_handle_t slcan_serial_port(slcan_t* sc)
+{
+	assert(sc != NULL);
+
+	return sc->serial_port;
+}
+
 
 static slcan_err_t slcan_process_incoming_data(slcan_t* sc)
 {

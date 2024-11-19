@@ -63,6 +63,13 @@ EXTERN slcan_err_t slcan_get_default_port_config(slcan_port_conf_t* conf);
  */
 EXTERN slcan_err_t slcan_get_port_config(slcan_t* sc, slcan_port_conf_t* conf);
 
+/**
+ * Получает последовательный порт.
+ * @param sc Интерфейс.
+ * @return Последовательный порт.
+ */
+EXTERN slcan_serial_handle_t slcan_serial_port(slcan_t* sc);
+
 
 /**
  * Инициализирует последовательных интерфейс CAN.
