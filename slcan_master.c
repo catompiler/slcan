@@ -432,7 +432,12 @@ slcan_err_t slcan_master_poll(slcan_master_t* scm)
         if(err != E_SLCAN_NO_ERROR) return err;
 
         err = slcan_master_process_result(scm, &cmd);
-        if(err != E_SLCAN_NO_ERROR) return err;
+        if(err != E_SLCAN_NO_ERROR){
+            // failed response - in future result.
+            if(err != E_SLCAN_EXEC_FAIL){
+                return err;
+            }
+        }
     }
 
     slcan_master_process_timeouts(scm);
