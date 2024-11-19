@@ -529,7 +529,7 @@ static slcan_err_t slcan_slave_send_existing_can_msgs(slcan_slave_t* scs)
     while(slcan_can_ext_fifo_peek(&scs->rxcanfifo, &resp_cmd.transmit.can_msg, &resp_cmd.transmit.extdata, &future) != 0){
         err = slcan_slave_send_transmit_resp_cmd(scs, &resp_cmd);
         if(err == E_SLCAN_OVERFLOW || err == E_SLCAN_OVERRUN){
-            scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
+            //scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
             // try again later.
             return err;
         }
@@ -594,6 +594,9 @@ static slcan_err_t slcan_slave_on_poll_all(slcan_slave_t* scs, slcan_cmd_t* cmd)
     slcan_err_t err;
 
     slcan_err_t send_err = slcan_slave_send_existing_can_msgs(scs);
+    if(send_err == E_SLCAN_OVERFLOW || send_err == E_SLCAN_OVERRUN){
+    	scs->errors |= SLCAN_SLAVE_ERROR_OVERRUN;
+    }
 
     resp_cmd.type = SLCAN_CMD_POLL_ALL;
     resp_cmd.mode = SLCAN_CMD_MODE_RESPONSE;
@@ -700,21 +703,35 @@ slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
     assert(scs != 0);
 
     struct timespec tp_end, tp_cur;
+    struct timespec tp_flush, *p_tp_flush;
 
     if(tp_timeout){
         slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
         slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
+        tp_flush.tv_sec = tp_timeout->tv_sec;
+        tp_flush.tv_nsec = tp_timeout->tv_nsec;
+        p_tp_flush = &tp_flush;
+    }else{
+    	tp_flush.tv_sec = 0;
+    	tp_flush.tv_nsec = 0;
+    	p_tp_flush = NULL;
     }
 
     slcan_err_t err;
 
-    for(;;){
-        if(slcan_can_ext_fifo_empty(&scs->rxcanfifo)) break;
+    while(slcan_slave_can_send_existing_messages(scs) && !slcan_can_ext_fifo_empty(&scs->rxcanfifo)){
+
+        err = slcan_flush(scs->sc, p_tp_flush);
+        if(err != E_SLCAN_NO_ERROR) return err;
 
 #if defined(SLCAN_SLAVE_POLL_SLCAN) && SLCAN_SLAVE_POLL_SLCAN == 1
         err = slcan_poll_out(scs->sc);
         if(err != E_SLCAN_NO_ERROR) return err;
 #endif
+        err = slcan_slave_send_existing_can_msgs(scs);
+        if(err != E_SLCAN_OVERFLOW && err != E_SLCAN_OVERRUN){
+        	if(err != E_SLCAN_NO_ERROR) return err;
+        }
 
         if(tp_timeout){
             slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
@@ -723,14 +740,13 @@ slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
                 return E_SLCAN_TIMEOUT;
             }
         }
+
+		if(p_tp_flush){
+			slcan_timespec_sub(&tp_end, &tp_cur, p_tp_flush);
+		}
     }
 
-    if(tp_timeout){
-        slcan_timespec_sub(&tp_end, &tp_cur, &tp_end);
-        tp_timeout = &tp_end;
-    }
-
-    err = slcan_flush(scs->sc, tp_timeout);
+    err = slcan_flush(scs->sc, p_tp_flush);
     if(err != E_SLCAN_NO_ERROR) return err;
 
     return E_SLCAN_NO_ERROR;
