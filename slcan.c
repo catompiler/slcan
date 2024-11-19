@@ -373,9 +373,14 @@ slcan_err_t slcan_flush(slcan_t* sc, struct timespec* tp_timeout)
         slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
     }
 
+    int res;
     slcan_err_t err;
 
     while(!slcan_io_fifo_empty(&sc->txiofifo)){
+
+        res = slcan_serial_flush(sc->serial_port);
+        if(res == SLCAN_IO_FAIL) return E_SLCAN_IO_ERROR;
+
         err = slcan_poll_out(sc);
         if(err != E_SLCAN_NO_ERROR) return err;
 
@@ -388,7 +393,7 @@ slcan_err_t slcan_flush(slcan_t* sc, struct timespec* tp_timeout)
         }
     }
 
-    int res = slcan_serial_flush(sc->serial_port);
+    res = slcan_serial_flush(sc->serial_port);
     if(res == SLCAN_IO_FAIL) return E_SLCAN_IO_ERROR;
 
     return E_SLCAN_NO_ERROR;
