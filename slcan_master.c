@@ -448,19 +448,31 @@ slcan_err_t slcan_master_flush(slcan_master_t* scm, struct timespec* tp_timeout)
     assert(scm != 0);
 
     struct timespec tp_end, tp_cur;
+    struct timespec tp_flush, *p_tp_flush;
 
     if(tp_timeout){
         slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
         slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
+        tp_flush.tv_sec = tp_timeout->tv_sec;
+        tp_flush.tv_nsec = tp_timeout->tv_nsec;
+        p_tp_flush = &tp_flush;
+    }else{
+    	tp_flush.tv_sec = 0;
+    	tp_flush.tv_nsec = 0;
+    	p_tp_flush = NULL;
     }
 
     slcan_err_t err;
 
-    for(;;){
-        err = slcan_master_poll(scm);
+    while(!slcan_resp_out_fifo_empty(&scm->respoutfifo)){
+
+        err = slcan_flush(scm->sc, p_tp_flush);
         if(err != E_SLCAN_NO_ERROR) return err;
 
-        if(slcan_resp_out_fifo_empty(&scm->respoutfifo)) break;
+        err = slcan_master_poll(scm);
+        if(err != E_SLCAN_OVERFLOW && err != E_SLCAN_OVERRUN){
+        	if(err != E_SLCAN_NO_ERROR) return err;
+        }
 
         if(tp_timeout){
             slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
@@ -469,7 +481,14 @@ slcan_err_t slcan_master_flush(slcan_master_t* scm, struct timespec* tp_timeout)
                 return E_SLCAN_TIMEOUT;
             }
         }
+
+		if(p_tp_flush){
+			slcan_timespec_sub(&tp_end, &tp_cur, p_tp_flush);
+		}
     }
+
+    err = slcan_flush(scm->sc, p_tp_flush);
+    if(err != E_SLCAN_NO_ERROR) return err;
 
     return E_SLCAN_NO_ERROR;
 }
