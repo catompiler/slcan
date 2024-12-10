@@ -17,6 +17,7 @@ slcan_err_t slcan_master_init(slcan_master_t* scm, slcan_t* sc)
     if(sc == NULL) return E_SLCAN_NULL_POINTER;
 
     scm->sc = sc;
+    scm->no_answers = false;
 
     slcan_resp_out_fifo_init(&scm->respoutfifo);
 
@@ -58,6 +59,16 @@ slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct timespec*
     scm->tp_timeout.tv_nsec = tp_timeout->tv_nsec;
 
     return E_SLCAN_NO_ERROR;
+}
+
+bool slcan_master_no_answers(slcan_master_t* scm)
+{
+    return scm->no_answers;
+}
+
+void slcan_master_set_no_answers(slcan_master_t* scm, bool no_answers)
+{
+    scm->no_answers = no_answers;
 }
 
 ALWAYS_INLINE static void slcan_master_future_start(slcan_future_t* future)
@@ -317,8 +328,10 @@ static slcan_err_t slcan_master_send_request(slcan_master_t* scm, slcan_cmd_t* c
     slcan_clock_gettime(CLOCK_MONOTONIC, &resp_out->tp_req);
     slcan_timespec_add(&resp_out->tp_req, &scm->tp_timeout, &resp_out->tp_req);
 
-    if(slcan_resp_out_fifo_put(&scm->respoutfifo, resp_out) == 0){
-        return E_SLCAN_OVERRUN;
+    if(!scm->no_answers){
+        if(slcan_resp_out_fifo_put(&scm->respoutfifo, resp_out) == 0){
+            return E_SLCAN_OVERRUN;
+        }
     }
 
     err = slcan_put_cmd(scm->sc, cmd);
@@ -326,6 +339,10 @@ static slcan_err_t slcan_master_send_request(slcan_master_t* scm, slcan_cmd_t* c
         // remove from resp out queue.
         slcan_resp_out_fifo_unput(&scm->respoutfifo);
         return err;
+    }
+
+    if(scm->no_answers){
+        slcan_master_future_end(resp_out->future, E_SLCAN_NO_ERROR);
     }
 
     return E_SLCAN_NO_ERROR;

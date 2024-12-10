@@ -23,6 +23,7 @@ typedef struct _Slcan_Master {
     slcan_can_ext_fifo_t rxcanfifo; //!< Фифо полученных сообщений CAN.
     slcan_can_fifo_t txcanfifo; //!< Фифо передаваемых сообщений CAN.
     struct timespec tp_timeout; //!< Тайм-аут запросов.
+    bool no_answers; //!< Китайские USB CAN переходники не отвечают.
 } slcan_master_t;
 
 /**
@@ -70,6 +71,20 @@ EXTERN size_t slcan_master_send_can_msgs_avail(slcan_master_t* scm);
  * @return Код ошибки.
  */
 EXTERN slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct timespec* tp_timeout);
+
+/**
+ * Получает отсутствие ответов.
+ * @param scm Ведущее устройство.
+ * @return Флаг отсутствия ответов..
+ */
+EXTERN bool slcan_master_no_answers(slcan_master_t* scm);
+
+/**
+ * Устанавливает отсутствие ответов.
+ * @param scm Ведущее устройство.
+ * @param no_answers Флаг отсутствия ответов..
+ */
+EXTERN void slcan_master_set_no_answers(slcan_master_t* scm, bool no_answers);
 
 /**
  * Обрабатывает события ведущего устройства.
