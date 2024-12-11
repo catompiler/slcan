@@ -61,7 +61,7 @@ slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct timespec*
     return E_SLCAN_NO_ERROR;
 }
 
-bool slcan_master_no_answers(slcan_master_t* scm)
+bool slcan_master_no_answers(const slcan_master_t* scm)
 {
     return scm->no_answers;
 }

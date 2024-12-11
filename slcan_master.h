@@ -77,7 +77,7 @@ EXTERN slcan_err_t slcan_master_set_timeout(slcan_master_t* scm, const struct ti
  * @param scm Ведущее устройство.
  * @return Флаг отсутствия ответов..
  */
-EXTERN bool slcan_master_no_answers(slcan_master_t* scm);
+EXTERN bool slcan_master_no_answers(const slcan_master_t* scm);
 
 /**
  * Устанавливает отсутствие ответов.
