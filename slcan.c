@@ -376,7 +376,7 @@ slcan_err_t slcan_flush(slcan_t* sc, struct timespec* tp_timeout)
     struct timespec tp_end, tp_cur;
 
     if(tp_timeout){
-        slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+        slcan_clock_gettime(&tp_cur);
         slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
     }
 
@@ -392,7 +392,7 @@ slcan_err_t slcan_flush(slcan_t* sc, struct timespec* tp_timeout)
         if(err != E_SLCAN_NO_ERROR) return err;
 
         if(tp_timeout){
-            slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+            slcan_clock_gettime(&tp_cur);
 
             if(slcan_timespec_cmp(&tp_cur, &tp_end, >)){
                 return E_SLCAN_TIMEOUT;

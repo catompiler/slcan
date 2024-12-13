@@ -706,7 +706,7 @@ slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
     struct timespec tp_flush, *p_tp_flush;
 
     if(tp_timeout){
-        slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+        slcan_clock_gettime(&tp_cur);
         slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
         tp_flush.tv_sec = tp_timeout->tv_sec;
         tp_flush.tv_nsec = tp_timeout->tv_nsec;
@@ -734,7 +734,7 @@ slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
         }
 
         if(tp_timeout){
-            slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+            slcan_clock_gettime(&tp_cur);
 
             if(slcan_timespec_cmp(&tp_cur, &tp_end, >)){
                 return E_SLCAN_TIMEOUT;
@@ -770,7 +770,7 @@ static uint16_t slcan_slave_get_timestamp(void)
 {
     struct timespec ts;
 
-    if(slcan_clock_gettime(CLOCK_MONOTONIC, &ts) != 0) return 0;
+    if(slcan_clock_gettime(&ts) != 0) return 0;
 
     uint16_t timestamp = ts.tv_sec % 60 + ts.tv_nsec / 1000000;
 

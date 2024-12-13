@@ -9,11 +9,10 @@
 
 /**
  * Получает текущую отметку времени.
- * @param clock_id Часы.
  * @param tp Отметка времени.
  * @return SLCAN_IO_SUCCESS в случае успеха, иначе SLCAN_IO_FAIL.
  */
-EXTERN int slcan_clock_gettime (clockid_t clock_id, struct timespec *tp);
+EXTERN int slcan_clock_gettime (struct timespec *tp);
 
 
 /**

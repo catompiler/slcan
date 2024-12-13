@@ -325,7 +325,7 @@ static slcan_err_t slcan_master_send_request(slcan_master_t* scm, slcan_cmd_t* c
 
     slcan_err_t err;
 
-    slcan_clock_gettime(CLOCK_MONOTONIC, &resp_out->tp_req);
+    slcan_clock_gettime(&resp_out->tp_req);
     slcan_timespec_add(&resp_out->tp_req, &scm->tp_timeout, &resp_out->tp_req);
 
     if(!scm->no_answers){
@@ -412,7 +412,7 @@ static void slcan_master_process_timeouts(slcan_master_t* scm)
     slcan_resp_out_t resp_out;
     struct timespec tp_cur;
 
-    slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+    slcan_clock_gettime(&tp_cur);
 
     while(slcan_resp_out_fifo_peek(&scm->respoutfifo, &resp_out)){
         // if timeout.
@@ -473,7 +473,7 @@ slcan_err_t slcan_master_flush(slcan_master_t* scm, struct timespec* tp_timeout)
     struct timespec tp_flush, *p_tp_flush;
 
     if(tp_timeout){
-        slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+        slcan_clock_gettime(&tp_cur);
         slcan_timespec_add(&tp_cur, tp_timeout, &tp_end);
         tp_flush.tv_sec = tp_timeout->tv_sec;
         tp_flush.tv_nsec = tp_timeout->tv_nsec;
@@ -497,7 +497,7 @@ slcan_err_t slcan_master_flush(slcan_master_t* scm, struct timespec* tp_timeout)
         }
 
         if(tp_timeout){
-            slcan_clock_gettime(CLOCK_MONOTONIC, &tp_cur);
+            slcan_clock_gettime(&tp_cur);
 
             if(slcan_timespec_cmp(&tp_cur, &tp_end, >)){
                 return E_SLCAN_TIMEOUT;
