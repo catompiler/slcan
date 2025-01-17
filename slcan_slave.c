@@ -712,6 +712,8 @@ slcan_err_t slcan_slave_flush(slcan_slave_t* scs, struct timespec* tp_timeout)
         tp_flush.tv_nsec = tp_timeout->tv_nsec;
         p_tp_flush = &tp_flush;
     }else{
+        tp_end.tv_sec = 0;
+        tp_end.tv_nsec = 0;
     	tp_flush.tv_sec = 0;
     	tp_flush.tv_nsec = 0;
     	p_tp_flush = NULL;
